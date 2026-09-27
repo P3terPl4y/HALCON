@@ -1,0 +1,63 @@
+
+<div class="bf-main__header">
+  <div>
+    <h1 class="bf-main__title">Asignar halcón</h1>
+    <p class="bf-main__subtitle">{{ .halcon.Name }} · Halcon #{{ .halcon.ID }}</p>
+  </div>
+  <a href="/admin/halcones/{{ .halcon.ID }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="tf-form-page">
+  <div class="tf-form-page__main">
+    <div class="tf-form-section">
+      <div class="tf-form-section__header">
+        <span class="tf-form-section__num">01</span>
+        <div class="tf-form-section__title-wrap">
+          <h3>Asignación</h3>
+          <p>Vincula el halcón a un usuario y paquete</p>
+        </div>
+        <span class="tf-form-section__icon"><i class="bi bi-person-plus-fill"></i></span>
+      </div>
+      <div class="tf-form-section__body">
+        <form method="POST" action="/admin/halcones/{{ .halcon.ID }}/assign">
+          <div class="tf-form-row">
+            <div class="tf-col-12">
+              <label class="form-label">Usuario destino <span class="req">*</span></label>
+              <select name="user_id" class="form-select" required>
+                <option value="">Selecciona un usuario...</option>
+                {{ range .users }}
+                <option value="{{ .ID }}">{{ .Name }} ({{ .Email }})</option>
+                {{ end }}
+              </select>
+              <small class="tf-field-hint">Solo se listan usuarios con rol "user"</small>
+            </div>
+            <div class="tf-col-12">
+              <label class="form-label">ID del paquete <span class="opt">Opcional</span></label>
+              <input type="text" name="package_id" class="form-control" placeholder="Ej: PKG-9981">
+              <small class="tf-field-hint">Referencia interna del envío que monitorea este halcón</small>
+            </div>
+          </div>
+
+          <div class="tf-actions">
+            <a href="/admin/halcones/{{ .halcon.ID }}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg"></i> Asignar halcón
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <aside class="tf-form-page__aside">
+    <div class="tf-form-aside-card">
+      <h4 class="tf-form-aside-card__title"><i class="bi bi-info-circle"></i> Importante</h4>
+      <ul class="tf-form-aside-card__list">
+        <li><i class="bi bi-check-circle-fill"></i> Si el halcón ya estaba asignado, la asignación anterior se cierra automáticamente</li>
+        <li><i class="bi bi-check-circle-fill"></i> El usuario verá el halcón en su dashboard inmediatamente</li>
+        <li><i class="bi bi-check-circle-fill"></i> El historial de asignaciones se conserva</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+

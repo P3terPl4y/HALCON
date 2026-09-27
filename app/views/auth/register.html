@@ -1,0 +1,64 @@
+{{ define "auth/register" }}
+<h1>Crear cuenta</h1>
+<p class="subtitle">Únete a Apolo como conductor o pasajero</p>
+
+<form method="POST" action="/register">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+    <div class="form-group">
+        <label for="name">Nombre completo</label>
+        <input type="text" id="name" name="name" value="{{ if .old }}{{ .old.Name }}{{ end }}" required>
+        {{ if .errors.name }}<div class="error-text">{{ .errors.name }}</div>{{ end }}
+    </div>
+
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ if .old }}{{ .old.Email }}{{ end }}" required>
+        {{ if .errors.email }}<div class="error-text">{{ .errors.email }}</div>{{ end }}
+    </div>
+
+    <div class="form-group">
+        <label for="phone">Teléfono</label>
+        <input type="tel" id="phone" name="phone" value="{{ if .old }}{{ .old.Phone }}{{ end }}" required>
+        {{ if .errors.phone }}<div class="error-text">{{ .errors.phone }}</div>{{ end }}
+    </div>
+
+    <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="password" minlength="8" required>
+        {{ if .errors.password }}<div class="error-text">{{ .errors.password }}</div>{{ end }}
+    </div>
+
+    <div class="form-group">
+     
+        <select id="role" name="role" value="user" style="opacity:0;">
+   
+        </select>
+        {{ if .errors.role }}<div class="error-text">{{ .errors.role }}</div>{{ end }}
+    </div>
+
+    <div id="driver-fields" style="display:none;">
+        <div class="form-group">
+            <label for="license_number">Número de licencia</label>
+            <input type="text" id="license_number" name="license_number" value="{{ if .old }}{{ .old.LicenseNumber }}{{ end }}">
+            {{ if .errors.license_number }}<div class="error-text">{{ .errors.license_number }}</div>{{ end }}
+        </div>
+        <div class="form-group">
+            <label for="vehicle_info">Vehículo</label>
+            <input type="text" id="vehicle_info" name="vehicle_info" value="{{ if .old }}{{ .old.VehicleInfo }}{{ end }}" placeholder="Ej: Toyota Prius 2022 - Blanco">
+        </div>
+    </div>
+
+    <button type="submit" class="btn">Crear cuenta</button>
+</form>
+
+<p class="link">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+
+<script>
+function toggleDriverFields() {
+    var role = document.getElementById('role').value;
+    document.getElementById('driver-fields').style.display = role === 'driver' ? 'block' : 'none';
+}
+toggleDriverFields();
+</script>
+{{ end }}

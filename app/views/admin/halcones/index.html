@@ -1,0 +1,130 @@
+
+<div class="bf-main__header">
+  <div>
+    <h1 class="bf-main__title">Gestión de halcones</h1>
+    <p class="bf-main__subtitle">Administra los dispositivos GPS del sistema</p>
+  </div>
+  <a href="/admin/halcones/create" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Nuevo halcón
+  </a>
+</div>
+
+<div class="tf-home-stats tf-home-stats--3" style="margin-bottom:1.25rem;">
+  <div class="tf-home-stat">
+    <div class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-broadcast"></i></div>
+    <div class="tf-home-stat__body">
+      <span class="tf-home-stat__label">Total</span>
+      <span class="tf-home-stat__value">{{ index .stats "total" }}</span>
+    </div>
+  </div>
+  <div class="tf-home-stat">
+    <div class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-broadcast-pin"></i></div>
+    <div class="tf-home-stat__body">
+      <span class="tf-home-stat__label">Activos</span>
+      <span class="tf-home-stat__value">{{ index .stats "active" }}</span>
+    </div>
+  </div>
+  <div class="tf-home-stat">
+    <div class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-link-45deg"></i></div>
+    <div class="tf-home-stat__body">
+      <span class="tf-home-stat__label">Asignados</span>
+      <span class="tf-home-stat__value">{{ index .stats "assigned" }}</span>
+    </div>
+  </div>
+</div>
+
+<form method="GET" action="/admin/halcones" class="tf-filters" style="margin-bottom:1rem;">
+  <div class="tf-filters__body">
+    <div class="tf-filters__grid">
+      <input type="text" name="search" class="form-control" placeholder="Buscar por nombre" value="{{ .search }}">
+      <select name="active" class="form-select">
+        <option value="">Todos</option>
+        <option value="1" {{ if eq .active "1" }}selected{{ end }}>Activos</option>
+        <option value="0" {{ if eq .active "0" }}selected{{ end }}>Inactivos</option>
+      </select>
+    </div>
+    <div class="tf-filters__actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Filtrar</button>
+      <a href="/admin/halcones" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+    </div>
+  </div>
+</form>
+
+<div class="tf-table-card">
+  <div class="tf-table-card__header">
+    <h3 class="tf-table-card__title"><i class="bi bi-broadcast"></i> Halcones</h3>
+    <span class="tf-table-card__count">{{ .total }} registros</span>
+  </div>
+  <div class="table-responsive">
+    <table class="tf-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Estado</th>
+          <th>Última señal</th>
+          <th style="text-align:right;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .halcones }}
+        <tr>
+          <td class="tf-cell-id">#{{ .ID }}</td>
+          <td>{{ .Name }}</td>
+          <td>
+            {{ if .IsActive }}<span class="badge bg-success">Activo</span>
+            {{ else }}<span class="badge bg-secondary">Inactivo</span>{{ end }}
+          </td>
+          <td>
+            {{ if .LastSeen }}{{ .LastSeen.Format "02 Jan 15:04" }}{{ else }}—{{ end }}
+          </td>
+          <td class="tf-cell-actions">
+            <a href="/admin/halcones/{{ .ID }}" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
+              <i class="bi bi-eye"></i>
+            </a>
+            <a href="/admin/halcones/{{ .ID }}/assign" class="btn btn-outline-primary btn-sm" title="Asignar">
+              <i class="bi bi-person-plus"></i>
+            </a>
+            <a href="/admin/halcones/{{ .ID }}/edit" class="btn btn-outline-primary btn-sm" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="POST" action="/admin/halcones/{{ .ID }}/delete" style="display:inline;margin:0;"
+                  onsubmit="return confirm('¿Eliminar este halcón? Se borrarán sus asignaciones.');">
+              <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="5">
+            <div class="tf-empty">
+              <div class="tf-empty__icon"><i class="bi bi-broadcast"></i></div>
+              <h4>Sin halcones</h4>
+              <p>No hay halcones que coincidan con los filtros aplicados.</p>
+            </div>
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  {{ if gt .totalPages 1 }}
+  <div class="tf-pagination-wrap">
+    <nav class="tf-pagination">
+      <a class="page-link {{ if le .page 1 }}is-disabled{{ end }}"
+         href="?page={{ sub .page 1 }}&limit={{ .limit }}&search={{ .search }}&active={{ .active }}">
+        <i class="bi bi-chevron-left"></i>
+      </a>
+      <span class="tf-pagination__current">Página {{ .page }} de {{ .totalPages }}</span>
+      <a class="page-link {{ if ge .page .totalPages }}is-disabled{{ end }}"
+         href="?page={{ add .page 1 }}&limit={{ .limit }}&search={{ .search }}&active={{ .active }}">
+        <i class="bi bi-chevron-right"></i>
+      </a>
+    </nav>
+  </div>
+  {{ end }}
+</div>
+

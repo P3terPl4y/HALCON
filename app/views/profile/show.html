@@ -1,0 +1,494 @@
+{{ define "profile/show" }}
+<link rel="stylesheet" href="/css/profile-map.css">
+
+<div class="bf-main__header">
+  <div>
+    <h1 class="bf-main__title">Mis halcones</h1>
+    <p class="bf-main__subtitle">Ubicación en tiempo real · {{ .user.Name }}</p>
+  </div>
+  <a href="/profile/edit" class="btn btn-outline-primary">
+    <i class="bi bi-pencil-square"></i> Editar perfil
+  </a>
+</div>
+
+<!-- Contenedor único: el mapa es el output, el HUD el contexto, la lista el input -->
+<div class="tf-map-live" id="mapLive" data-user-id="{{ .user.ID }}">
+
+  <div id="profile-map"></div>
+
+  <!-- HUD superior izquierdo: contexto crítico -->
+  <div class="tf-map-live__hud">
+    <div class="tf-map-live__user">
+      <span class="tf-map-live__avatar"><i class="bi bi-person-fill"></i></span>
+      <div>
+        <strong id="userID" value="{{.user.ID}}">ID {{.user.ID}}</strong>
+        <strong>{{ .user.Name }}</strong>
+        <small>{{ .user.Email }}</small>
+      </div>
+    </div>
+
+    <div class="tf-map-live__status" id="liveStatus">
+      <span class="dot"></span>
+      <span id="liveStatusText">Conectando…</span>
+    </div>
+
+    <div class="tf-map-live__stats">
+      <div>
+        <span class="tf-map-live__stat-label">Halcones</span>
+        <span class="tf-map-live__stat-value" id="statTotal">0</span>
+      </div>
+      <div>
+        <span class="tf-map-live__stat-label">En vivo</span>
+        <span class="tf-map-live__stat-value is-active" id="statLive">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de halcones: capa de contexto detallado -->
+  <div class="tf-map-live__list" id="halconPanel">
+    <header class="tf-map-live__list-head">
+      <span><i class="bi bi-broadcast-pin"></i> Halcones asignados</span>
+      <span class="tf-map-live__list-count" id="listCount">0</span>
+    </header>
+    <div class="tf-map-live__list-body" id="halconList">
+      <div class="tf-map-live__empty" id="halconListEmpty">
+        <i class="bi bi-inbox"></i>
+        <p>Sin halcones asignados</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay de estados vacíos -->
+  <div class="tf-map-live__overlay" id="mapOverlay">
+    <div class="tf-map-live__overlay-inner">
+      <div class="tf-map-live__overlay-icon"><i class="bi bi-broadcast"></i></div>
+      <h4 id="overlayTitle">Conectando…</h4>
+      <p id="overlayText">Estableciendo conexión con el servidor de tracking.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    'use strict';
+
+    /* ============================================================
+       Guardas de entorno
+       ============================================================ */
+    if (typeof L === 'undefined') {
+      console.error('[ALCON] Leaflet no está disponible.');
+      var ov = document.getElementById('mapOverlay');
+      if (ov) {
+        document.getElementById('overlayTitle').textContent = 'Error de carga';
+        document.getElementById('overlayText').textContent =
+          'El mapa no pudo inicializarse. Verifica tu conexión.';
+      }
+      return;
+    }
+
+    var rootEl = document.getElementById('mapLive');
+    if (!rootEl) return;
+
+    var USER_ID = document.getElementById("userID")
+    if (!USER_ID) {
+      console.error('[ALCON] mapLive: data-user-id vacío o inválido.');
+      return;
+    }
+
+    /* ============================================================
+       Constantes
+       ============================================================ */
+    var WS_PATH = '/dashboard/' + USER_ID + '/';
+    var DEFAULT_CENTER = [21.5218, -77.7812];   // Cuba
+    var DEFAULT_ZOOM = 7;
+    var FOCUS_ZOOM = 15;
+    var IDLE_MS = 12000;                 // sin datos → inactivo
+    var RECONNECT_BASE_MS = 1000;                  // backoff exponencial
+    var RECONNECT_MAX_MS = 15000;
+    var AUTO_FIT_PADDING = 60;
+
+    /* ============================================================
+       Estado del cliente
+       ============================================================ */
+    var map = null;
+    var markers = {};      // halconId → L.marker
+    var markerData = {};      // halconId → { name, lat, lng, active }
+    var lastSeen = {};      // halconId → timestamp ms
+    var selectedId = null;
+    var ws = null;
+    var reconnectAt = RECONNECT_BASE_MS;
+    var reconnectTo = null;
+    var idleTimer = null;
+
+    /* ============================================================
+       Refs de UI
+       ============================================================ */
+    var ui = {
+      statusBox: document.getElementById('liveStatus'),
+      statusText: document.getElementById('liveStatusText'),
+      statTotal: document.getElementById('statTotal'),
+      statLive: document.getElementById('statLive'),
+      listEl: document.getElementById('halconList'),
+      listEmpty: document.getElementById('halconListEmpty'),
+      listCount: document.getElementById('listCount'),
+      overlay: document.getElementById('mapOverlay'),
+      overlayTtl: document.getElementById('overlayTitle'),
+      overlayTxt: document.getElementById('overlayText')
+    };
+
+    /* ============================================================
+       Inicialización del mapa
+       ============================================================ */
+    function initMap() {
+      map = L.map('profile-map', {
+        zoomControl: true,
+        attributionControl: true
+      }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
+      }).addTo(map);
+
+      setTimeout(function () { map.invalidateSize(); }, 200);
+    }
+
+    /* ============================================================
+       Helpers
+       ============================================================ */
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (m) {
+        return {
+          '&': '&amp;', '<': '&lt;', '>': '&gt;',
+          '"': '&quot;', "'": '&#39;'
+        }[m];
+      });
+    }
+
+    function setStatus(text, kind) {
+      if (!ui.statusBox || !ui.statusText) return;
+      ui.statusText.textContent = text;
+      ui.statusBox.classList.remove('is-live', 'is-idle', 'is-off');
+      if (kind) ui.statusBox.classList.add(kind);
+    }
+
+    function showOverlay(title, text) {
+      if (!ui.overlay) return;
+      ui.overlayTtl.textContent = title;
+      ui.overlayTxt.textContent = text;
+      ui.overlay.hidden = false;
+    }
+
+    function hideOverlay() {
+      if (ui.overlay) ui.overlay.hidden = true;
+    }
+
+    function makeIcon(live) {
+      var cls = 'tf-halcon-pin ' + (live ? 'tf-halcon-pin--live' : 'tf-halcon-pin--idle');
+      return L.divIcon({
+        className: '',
+        html: '<div class="' + cls + '"><i class="bi bi-broadcast-pin"></i></div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -30]
+      });
+    }
+
+    /* ============================================================
+       Marcadores en el mapa
+       ============================================================ */
+    function upsertMarker(id, name, lat, lng, live) {
+      var label = escapeHtml(name || ('Halcon #' + id));
+      var coords = lat.toFixed(5) + ', ' + lng.toFixed(5);
+
+      var popupHtml =
+        '<strong>' + label + '</strong>' +
+        '<small>Halcon #' + id + '</small>' +
+        '<small>' + coords + '</small>';
+
+      if (!markers[id]) {
+        markers[id] = L.marker([lat, lng], { icon: makeIcon(live) })
+          .addTo(map)
+          .bindPopup(popupHtml);
+      } else {
+        markers[id].setLatLng([lat, lng]).setIcon(makeIcon(live));
+        var popup = markers[id].getPopup();
+        if (popup) popup.setContent(popupHtml);
+      }
+
+      markerData[id] = { name: name, lat: lat, lng: lng, active: live };
+      lastSeen[id] = Date.now();
+    }
+
+    function fitToMarkers() {
+      var ids = Object.keys(markers);
+      if (ids.length === 0) return;
+      if (ids.length === 1) {
+        var m = markers[ids[0]];
+        map.setView(m.getLatLng(), FOCUS_ZOOM, { animate: true });
+        return;
+      }
+      var group = L.featureGroup(ids.map(function (id) { return markers[id]; }));
+      map.fitBounds(group.getBounds(), {
+        padding: [AUTO_FIT_PADDING, AUTO_FIT_PADDING],
+        maxZoom: 16
+      });
+    }
+
+    /* ============================================================
+       Lista lateral
+       ============================================================ */
+    function upsertListItem(id, name) {
+      if (ui.listEmpty) ui.listEmpty.style.display = 'none';
+
+      var existing = ui.listEl.querySelector('[data-id="' + id + '"]');
+      if (existing) return existing;
+
+      var item = document.createElement('div');
+      item.className = 'tf-map-live__item';
+      item.dataset.id = id;
+      item.innerHTML =
+        '<span class="tf-map-live__item-dot"></span>' +
+        '<div class="tf-map-live__item-body">' +
+        '<span class="tf-map-live__item-name">' +
+        escapeHtml(name || ('Halcon #' + id)) +
+        '</span>' +
+        '<span class="tf-map-live__item-meta">#' + id + '</span>' +
+        '</div>' +
+        '<i class="bi bi-chevron-right tf-map-live__item-arrow"></i>';
+
+      ui.listEl.appendChild(item);
+      updateListCount();
+      return item;
+    }
+
+    function markItemLive(id, live) {
+      var item = ui.listEl.querySelector('[data-id="' + id + '"]');
+      if (!item) return;
+      var dot = item.querySelector('.tf-map-live__item-dot');
+      if (dot) dot.classList.toggle('is-live', live);
+    }
+
+    function updateListCount() {
+      if (!ui.listCount) return;
+      var n = ui.listEl.querySelectorAll('.tf-map-live__item').length;
+      ui.listCount.textContent = String(n);
+    }
+
+    function selectItem(id) {
+      selectedId = id;
+      ui.listEl.querySelectorAll('.tf-map-live__item').forEach(function (el) {
+        el.classList.toggle('is-selected', String(id) === el.dataset.id);
+      });
+      var m = markers[id];
+      if (m) {
+        var ll = m.getLatLng();
+        map.setView(ll, FOCUS_ZOOM, { animate: true });
+        m.openPopup();
+      }
+    }
+
+    /* ============================================================
+       Contadores
+       ============================================================ */
+    function updateStats() {
+      if (ui.statTotal) {
+        ui.statTotal.textContent = String(Object.keys(markers).length);
+      }
+    }
+
+    function updateLiveCount() {
+      var now = Date.now();
+      var live = 0;
+      Object.keys(markers).forEach(function (id) {
+        if (now - (lastSeen[id] || 0) < IDLE_MS) live++;
+      });
+      if (ui.statLive) ui.statLive.textContent = String(live);
+      return live;
+    }
+
+    /* ============================================================
+       WebSocket
+       ============================================================ */
+    function wsUrl() {
+      var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return proto + '//' + location.host + "/dashboard/35";
+    }
+
+    function connect() {
+      if (ws && (ws.readyState === WebSocket.OPEN ||
+        ws.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
+      var url = wsUrl();
+      console.log('[ALCON] Conectando a', url);
+      setStatus('Conectando…', 'is-idle');
+
+      try {
+        ws = new WebSocket("ws://localhost:3000/dashboard/35");
+      } catch (e) {
+        console.error('[ALCON] Error al crear WebSocket:', e);
+        scheduleReconnect();
+        return;
+      }
+
+      ws.onopen = function () {
+        console.log('[ALCON] WebSocket conectado');
+        reconnectAt = RECONNECT_BASE_MS;
+        setStatus('En vivo', 'is-live');
+        if (Object.keys(markers).length === 0) {
+          showOverlay(
+            'Esperando datos',
+            'Los halcones aparecerán aquí cuando envíen su primera coordenada.'
+          );
+        }
+      };
+
+      ws.onmessage = function (ev) {
+        var m;
+        try { m = JSON.parse(ev.data); }
+        catch (e) { console.warn('[ALCON] Payload inválido:', ev.data); return; }
+
+        /* --- Estado inicial de un halcón --- */
+        if (m.type === 'halcon_status') {
+          var sid = m.halcon_id;
+          if (typeof sid === 'undefined') return;
+
+          upsertListItem(sid, m.name);
+          var slat = parseFloat(m.lat);
+          var slng = parseFloat(m.lng);
+
+          if (!isNaN(slat) && !isNaN(slng) && (slat !== 0 || slng !== 0)) {
+            upsertMarker(sid, m.name, slat, slng, !!m.active);
+            markItemLive(sid, !!m.active);
+            hideOverlay();
+          }
+          updateStats();
+          return;
+        }
+
+        /* --- Coordenada en vivo --- */
+        if (typeof m.halcon_id !== 'undefined' &&
+          typeof m.latitude !== 'undefined') {
+
+          var hid = m.halcon_id;
+          var hlat = parseFloat(m.latitude);
+          var hlng = parseFloat(m.longitude);
+          if (isNaN(hlat) || isNaN(hlng)) return;
+
+          upsertListItem(hid, m.name);
+          upsertMarker(hid, m.name, hlat, hlng, true);
+          markItemLive(hid, true);
+          hideOverlay();
+          updateStats();
+
+          if (selectedId === hid) {
+            map.setView([hlat, hlng], FOCUS_ZOOM, { animate: true });
+          } else if (Object.keys(markers).length === 1) {
+            map.setView([hlat, hlng], FOCUS_ZOOM, { animate: true });
+          }
+        }
+      };
+
+      ws.onerror = function (e) {
+        console.warn('[ALCON] WebSocket error', e);
+        setStatus('Error de conexión', 'is-off');
+      };
+
+      ws.onclose = function (ev) {
+        console.log('[ALCON] WebSocket cerrado', ev.code, ev.reason);
+        ws = null;
+        setStatus('Reconectando…', 'is-idle');
+        scheduleReconnect();
+      };
+    }
+
+    function scheduleReconnect() {
+      if (reconnectTo) return;
+      reconnectTo = setTimeout(function () {
+        reconnectTo = null;
+        reconnectAt = Math.min(reconnectAt * 2, RECONNECT_MAX_MS);
+        connect();
+      }, reconnectAt);
+    }
+
+    /* ============================================================
+       Vigilancia de inactividad
+       ============================================================ */
+    function startIdleWatcher() {
+      idleTimer = setInterval(function () {
+        var now = Date.now();
+        var total = 0;
+        var anyLive = false;
+
+        Object.keys(markers).forEach(function (id) {
+          total++;
+          var live = (now - (lastSeen[id] || 0)) < IDLE_MS;
+          if (live) anyLive = true;
+          markers[id].setIcon(makeIcon(live));
+          markItemLive(parseInt(id, 10), live);
+        });
+
+        updateStats();
+        updateLiveCount();
+
+        if (total === 0) {
+          showOverlay(
+            'Sin halcones',
+            'No tienes halcones asignados todavía. Un moderador debe asignarte uno.'
+          );
+          setStatus('Sin datos', 'is-off');
+        } else if (!anyLive) {
+          showOverlay(
+            'Sin señal',
+            'Tus halcones están asignados pero ninguno está transmitiendo coordenadas.'
+          );
+          setStatus('En espera', 'is-idle');
+        } else {
+          hideOverlay();
+          setStatus('En vivo', 'is-live');
+        }
+      }, 2000);
+    }
+
+    /* ============================================================
+       Interacciones
+       ============================================================ */
+    function bindEvents() {
+      ui.listEl.addEventListener('click', function (e) {
+        var item = e.target.closest('.tf-map-live__item');
+        if (!item) return;
+        selectItem(parseInt(item.dataset.id, 10));
+      });
+
+      window.addEventListener('resize', function () {
+        if (map) map.invalidateSize();
+      });
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && map) {
+          setTimeout(function () { map.invalidateSize(); }, 100);
+        }
+      });
+    }
+
+    /* ============================================================
+       Arranque
+       ============================================================ */
+    function boot() {
+      initMap();
+      bindEvents();
+      showOverlay('Conectando…', 'Estableciendo conexión con el servidor de tracking.');
+      setStatus('Conectando…', 'is-idle');
+      updateStats();
+      updateLiveCount();
+      startIdleWatcher();
+      connect();
+    }
+
+    boot();
+  });
+</script>
+{{ end }}

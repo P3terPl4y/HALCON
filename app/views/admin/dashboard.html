@@ -1,0 +1,225 @@
+
+<div class="tf-page-header">
+  <div>
+    <h1><i class="bi bi-speedometer2"></i> Panel de administración</h1>
+    <p>Control total del sistema ALCON · Usuarios, halcones y monitoreo en vivo</p>
+  </div>
+  <div class="tf-flex">
+    <a href="/admin/users" class="btn btn-secondary"><i class="bi bi-people"></i> Usuarios</a>
+    <a href="/admin/halcones" class="btn btn-primary"><i class="bi bi-broadcast"></i> Halcones</a>
+  </div>
+</div>
+
+<!-- Stats principales -->
+<section class="tf-form-block" data-block="stats" style="margin-bottom:1.5rem;">
+  <header class="tf-form-block__head">
+    <i class="bi bi-graph-up-arrow tf-form-block__icon"></i>
+    <div class="tf-form-block__text">
+      <h2>Resumen general</h2>
+      <p>Estado actual del sistema</p>
+    </div>
+  </header>
+  <div class="tf-form-block__body">
+    <div class="tf-home-stats" style="grid-template-columns:repeat(4,1fr);">
+      <div class="tf-home-stat">
+        <div class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-people-fill"></i></div>
+        <div class="tf-home-stat__body">
+          <span class="tf-home-stat__label">Usuarios</span>
+          <span class="tf-home-stat__value" id="stat-users">{{ .stats.users }}</span>
+        </div>
+      </div>
+      <div class="tf-home-stat">
+        <div class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-person-badge-fill"></i></div>
+        <div class="tf-home-stat__body">
+          <span class="tf-home-stat__label">Moderadores</span>
+          <span class="tf-home-stat__value" id="stat-moderators">{{ .stats.moderators }}</span>
+        </div>
+      </div>
+      <div class="tf-home-stat">
+        <div class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-broadcast"></i></div>
+        <div class="tf-home-stat__body">
+          <span class="tf-home-stat__label">Halcones</span>
+          <span class="tf-home-stat__value" id="stat-halcones">{{ .stats.halcones }}</span>
+        </div>
+      </div>
+      <div class="tf-home-stat">
+        <div class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-broadcast-pin"></i></div>
+        <div class="tf-home-stat__body">
+          <span class="tf-home-stat__label">En vivo</span>
+          <span class="tf-home-stat__value" id="stat-active">{{ .stats.active }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Layout principal: mapa + rail -->
+<div class="tf-form-page">
+  <div class="tf-form-page__main">
+    <section class="tf-form-block" data-block="map" style="padding:0;">
+      <header class="tf-form-block__head" style="padding:1rem 1.25rem;">
+        <i class="bi bi-geo-alt-fill tf-form-block__icon"></i>
+        <div class="tf-form-block__text">
+          <h2>Mapa en vivo</h2>
+          <p>Posiciones actuales de todos los halcones del sistema</p>
+        </div>
+        <span class="tf-map-picker__coords" id="admin-map-status" data-empty="true" style="margin-left:auto;">
+          <i class="bi bi-circle-fill" style="color:#9ca3af;font-size:.55rem;"></i> Desconectado
+        </span>
+      </header>
+      <div class="tf-form-block__body" style="padding:0;">
+        <div id="admin-map" style="width:100%;height:620px;background:var(--tf-surface-3);position:relative;z-index:1;"></div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="tf-form-page__aside">
+
+    <!-- Rail: halcones en vivo -->
+    <div class="tf-rail-card">
+      <header class="tf-rail-card__head">
+        <i class="bi bi-broadcast-pin"></i>
+        <span>Halcones en vivo</span>
+      </header>
+      <div class="tf-halcones-list" id="admin-halcon-list" style="max-height:340px;overflow-y:auto;">
+        <div style="padding:1.25rem 1rem;text-align:center;color:var(--tf-text-muted);font-size:.82rem;">
+          <i class="bi bi-hourglass-split" style="font-size:1.3rem;display:block;margin-bottom:.35rem;opacity:.5;"></i>
+          Esperando coordenadas…
+        </div>
+      </div>
+    </div>
+
+    <!-- Rail: acciones rápidas -->
+    <div class="tf-rail-card tf-rail-card--actions">
+      <header class="tf-rail-card__head">
+        <i class="bi bi-lightning-charge"></i>
+        <span>Acciones rápidas</span>
+      </header>
+      <a href="/admin/users/create" class="btn btn-primary tf-w-full">
+        <i class="bi bi-person-plus"></i> Crear usuario
+      </a>
+      <a href="/admin/halcones/create" class="btn btn-outline-primary tf-w-full">
+        <i class="bi bi-plus-lg"></i> Crear halcón
+      </a>
+      <a href="/admin/halcones" class="btn btn-outline-secondary tf-w-full">
+        <i class="bi bi-list-ul"></i> Ver todos los halcones
+      </a>
+    </div>
+
+  </aside>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var map = L.map('admin-map', {zoomControl:true}).setView([21.5218, -77.7812], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap', maxZoom: 19
+  }).addTo(map);
+  setTimeout(function(){ map.invalidateSize(); }, 200);
+
+  var markers = {};
+  var lastSeen = {};
+  var listEl = document.getElementById('admin-halcon-list');
+  var statusEl = document.getElementById('admin-map-status');
+  var ws = null;
+
+  function setStatus(text, kind){
+    var dot = kind === 'live' ? '#10B981' : kind === 'idle' ? '#F59E0B' : '#9CA3AF';
+    statusEl.innerHTML = '<i class="bi bi-circle-fill" style="color:'+dot+';font-size:.55rem;"></i> ' + text;
+    statusEl.dataset.empty = kind === 'off' ? 'true' : 'false';
+  }
+
+  function makeIcon(){
+    return L.divIcon({
+      className:'',
+      html:'<div class="tf-halcon-pin tf-halcon-pin--live"><i class="bi bi-broadcast-pin"></i></div>',
+      iconSize:[30,30], iconAnchor:[15,30]
+    });
+  }
+
+  function upsertMarker(id, name, lat, lng){
+    if(markers[id]){
+      markers[id].setLatLng([lat,lng]);
+    } else {
+      markers[id] = L.marker([lat,lng], {icon:makeIcon()})
+        .addTo(map)
+        .bindPopup('<strong>'+escapeHtml(name||('Halcon #'+id))+'</strong><small>Halcon #'+id+'</small>');
+    }
+    lastSeen[id] = Date.now();
+  }
+
+  function upsertListItem(id, name){
+    if(!listEl.querySelector('.tf-halcon-item')){ listEl.innerHTML = ''; }
+    var item = listEl.querySelector('[data-id="'+id+'"]');
+    if(item){ return item; }
+    item = document.createElement('div');
+    item.className = 'tf-halcon-item';
+    item.dataset.id = id;
+    item.innerHTML =
+      '<span class="tf-halcon-item__dot is-live"></span>' +
+      '<div class="tf-halcon-item__body">' +
+        '<span class="tf-halcon-item__name">'+escapeHtml(name||('Halcon #'+id))+'</span>' +
+        '<span class="tf-halcon-item__meta">#'+id+'</span>' +
+      '</div>' +
+      '<i class="bi bi-chevron-right tf-halcon-item__arrow"></i>';
+    listEl.appendChild(item);
+    return item;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(m){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+
+  listEl.addEventListener('click', function(e){
+    var item = e.target.closest('.tf-halcon-item');
+    if(!item) return;
+    var id = item.dataset.id;
+    if(markers[id]){
+      var ll = markers[id].getLatLng();
+      map.setView(ll, 15);
+      markers[id].openPopup();
+    }
+  });
+
+  function connect(){
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(proto + '//' + location.host + '/admin/stream');
+
+    ws.onopen = function(){ setStatus('En vivo', 'live'); };
+    ws.onclose = function(){
+      setStatus('Reconectando…', 'idle');
+      setTimeout(connect, 3000);
+    };
+    ws.onerror = function(){ setStatus('Error', 'off'); };
+
+    ws.onmessage = function(ev){
+      try {
+        var m = JSON.parse(ev.data);
+        if(typeof m.halcon_id === 'undefined') return;
+        var lat = parseFloat(m.latitude);
+        var lng = parseFloat(m.longitude);
+        if(isNaN(lat) || isNaN(lng)) return;
+        upsertMarker(m.halcon_id, m.name, lat, lng);
+        upsertListItem(m.halcon_id, m.name);
+      } catch(e){}
+    };
+  }
+
+  // Auto-marcar inactivos
+  setInterval(function(){
+    var now = Date.now();
+    var live = 0;
+    Object.keys(markers).forEach(function(id){
+      if(now - (lastSeen[id]||0) < 15000) live++;
+    });
+    document.getElementById('stat-active').textContent = String(live);
+  }, 3000);
+
+  connect();
+})();
+</script>
+

@@ -1,0 +1,131 @@
+
+<div id="map"></div>
+
+<div class="panel">
+    <h1>Panel de Alcones</h1>
+    <p class="sub">Monitoreo en tiempo real</p>
+
+    <div class="field">
+        <label for="alconSelect">Alcon</label>
+        <select id="alconSelect">
+            <option value="">Seleccionar alcon...</option>
+        </select>
+    </div>
+
+    <div class="status" id="status">
+        <span class="dot"></span>
+        <span id="statusText">Desconectado</span>
+    </div>
+
+    <div class="coords" id="coords">— , —</div>
+
+    <div style="margin-top:12px;font-size:.8rem;color:var(--text-muted);">
+        <div id="activeCount">Alcones activos: 0</div>
+    </div>
+</div>
+
+<div class="legend">
+    <div class="item"><span class="swatch" style="background:#dc2626"></span> Alcon activo</div>
+    <div class="item"><span class="swatch" style="background:#4f46e5"></span> Alcon inactivo</div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    const userId = document.body.dataset.userId; // viene del layout
+    const WS_PATH = `/dashboard/${userId}/`;
+    const DEFAULT_CENTER = [19.4326, -99.1332];
+    const DEFAULT_ZOOM = 13;
+
+    const map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
+    }).addTo(map);
+
+    const markers = {}; // alcon_id -> L.marker
+    let ws = null;
+    let selectedAlconId = null;
+
+    const statusEl = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const coordsEl = document.getElementById('coords');
+    const selectEl = document.getElementById('alconSelect');
+    const countEl = document.getElementById('activeCount');
+
+    function setStatus(text, cls) {
+        statusText.textContent = text;
+        statusEl.className = 'status' + (cls ? ' ' + cls : '');
+    }
+
+    function makeIcon(active) {
+        return L.divIcon({
+            className: '',
+            html: '<div class="marker-icon' + (active ? '' : ' inactive') + '"></div>',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13]
+        });
+    }
+
+    function connect() {
+        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(proto + '//' + location.host + WS_PATH);
+
+        ws.onopen = () => setStatus('Conectado', 'active');
+        ws.onclose = () => {
+            setStatus('Reconectando...', 'error');
+            setTimeout(connect, 3000);
+        };
+
+        ws.onmessage = (ev) => {
+            try {
+                const msg = JSON.parse(ev.data);
+
+                if (msg.type === 'alcon_status') {
+                    // Estado inicial de un alcon
+                    if (!selectEl.querySelector(`option[value="${msg.alcon_id}"]`)) {
+                        const opt = document.createElement('option');
+                        opt.value = msg.alcon_id;
+                        opt.textContent = msg.name;
+                        selectEl.appendChild(opt);
+                    }
+                    updateMarker(msg.alcon_id, msg.lat, msg.lng, true);
+                    return;
+                }
+
+                // Coordenada en vivo
+                const { alcon_id, latitude, longitude } = msg;
+                updateMarker(alcon_id, latitude, longitude, true);
+
+                if (selectedAlconId === alcon_id) {
+                    coordsEl.textContent = `${latitude.toFixed(6)} , ${longitude.toFixed(6)}`;
+                    map.setView([latitude, longitude], 15);
+                }
+            } catch (_) {}
+        };
+    }
+
+    function updateMarker(alconId, lat, lng, active) {
+        if (markers[alconId]) {
+            markers[alconId].setLatLng([lat, lng]);
+        } else {
+            markers[alconId] = L.marker([lat, lng], { icon: makeIcon(active) })
+                .addTo(map)
+                .bindPopup(`Alcon #${alconId}`);
+        }
+    }
+
+    selectEl.addEventListener('change', () => {
+        selectedAlconId = selectEl.value ? parseInt(selectEl.value) : null;
+        if (selectedAlconId && markers[selectedAlconId]) {
+            const latlng = markers[selectedAlconId].getLatLng();
+            map.setView(latlng, 15);
+            coordsEl.textContent = `${latlng.lat.toFixed(6)} , ${latlng.lng.toFixed(6)}`;
+        }
+    });
+
+    connect();
+})();
+</script>
+

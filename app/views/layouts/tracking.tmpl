@@ -1,0 +1,171 @@
+{{ define "layouts/tracking" }}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }} - Apolo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        .overlay {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.95);
+            padding: 16px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            font-size: 0.9rem;
+        }
+        .overlay h2 { font-size: 1rem; margin-bottom: 8px; color: #111; }
+        .status { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #ef4444; animation: pulse 1.5s infinite;
+        }
+        .dot.connected { background: #22c55e; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .coords {
+            font-family: monospace; font-size: 0.85rem;
+            color: #555; margin-top: 8px;
+        }
+        .driver-icon {
+            width: 32px; height: 32px;
+            background: #4f46e5; border: 3px solid #fff;
+            border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="overlay">
+        <h2>Apolo Tracking</h2>
+        <div class="status">
+            <div class="dot" id="status-dot"></div>
+            <span id="status-text">Conectando...</span>
+        </div>
+        <div class="coords" id="coords">—</div>
+        <div class="coords" id="client-count">Clientes: {{ .count }}</div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // --- Configuración del mapa ---
+        const map = L.map('map').setView([19.4326, -99.1332], 12); // CDMX por defecto
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // --- Marcadores activos por user_id ---
+        const markers = {};
+
+        // --- Coneión WebSocket ---
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/coords`;
+
+        let ws;
+        let reconnectTimer;
+
+        function connect() {
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById('status-dot').classList.add('connected');
+                document.getElementById('status-text').textContent = 'Conectado';
+                clearTimeout(reconnectTimer);
+            };
+
+            ws.onmessage = (event) => {
+                const coord = JSON.parse(event.data);
+                updateMarker(coord);
+            };
+
+            ws.onclose = () => {
+                document.getElementById('status-dot').classList.remove('connected');
+                document.getElementById('status-text').textContent = 'Reconectando...';
+                reconnectTimer = setTimeout(connect, 3000);
+            };
+
+            ws.onerror = (err) => {
+                console.error('WS error:', err);
+                ws.close();
+            };
+        }
+
+        function updateMarker(coord) {
+            const { user_id, latitude, longitude, role } = coord;
+
+            // Actualizar overlay
+            document.getElementById('coords').textContent =
+                `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+            // Si ya existe el marcador, moverlo
+            if (markers[user_id]) {
+                markers[user_id].setLatLng([latitude, longitude]);
+            } else {
+                // Crear icono personalizado
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div class="driver-icon" title="${user_id}"></div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
+
+                // Crear marcador
+                markers[user_id] = L.marker([latitude, longitude], {
+                    icon: icon
+                }).addTo(map);
+
+                markers[user_id].bindPopup(
+                    `<b>${user_id}</b><br>${role || 'usuario'}`
+                );
+            }
+        }
+
+        // --- Simulación de movimiento (para probar sin GPS) ---
+        function simulateMovement() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    user_id: 'driver-demo',
+                    latitude: 19.4326 + (Math.random() - 0.5) * 0.05,
+                    longitude: -99.1332 + (Math.random() - 0.5) * 0.05,
+                    role: 'driver'
+                }));
+            }
+        }
+
+        // Descomenta para simular movimiento cada 2 segundos:
+        // setInterval(simulateMovement, 2000);
+
+        // --- Geolocalización del navegador (para el propio cliente) ---
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            user_id: 'me',
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            role: 'client'
+                        }));
+                    }
+                },
+                (err) => console.warn('Geolocation error:', err),
+                { enableHighAccuracy: true, maximumAge: 1000 }
+            );
+        }
+
+        connect();
+    </script>
+</body>
+</html>
+{{ end }}

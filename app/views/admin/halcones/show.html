@@ -1,0 +1,120 @@
+
+<div class="bf-main__header">
+  <div>
+    <h1 class="bf-main__title">{{ .halcon.Name }}</h1>
+    <p class="bf-main__subtitle">Halcon #{{ .halcon.ID }}</p>
+  </div>
+  <div style="display:flex;gap:.5rem;">
+    <a href="/admin/halcones/{{ .halcon.ID }}/assign" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> Asignar</a>
+    <a href="/admin/halcones/{{ .halcon.ID }}/edit" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+    <a href="/admin/halcones" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+  </div>
+</div>
+
+{{ if .createdToken }}
+<div class="alert alert-success" style="margin-bottom:1.25rem;">
+  <i class="bi bi-key-fill"></i>
+  <div>
+    <strong>Token generado (guárdalo ahora, no se mostrará de nuevo)</strong>
+    <code style="display:block;margin-top:.35rem;word-break:break-all;">{{ .createdToken }}</code>
+  </div>
+</div>
+{{ end }}
+
+<div class="tf-profile__layout">
+  <div>
+    <!-- Info del halcón -->
+    <div class="tf-info-block" style="margin-bottom:1.25rem;">
+      <div class="tf-info-block__head">
+        <div class="tf-info-block__icon"><i class="bi bi-broadcast"></i></div>
+        <div class="tf-info-block__text">
+          <h2>Información del dispositivo</h2>
+          <p>Estado y última señal conocida</p>
+        </div>
+      </div>
+      <div class="tf-info-block__body">
+        <dl class="tf-info-list">
+          <div class="tf-info-list__row">
+            <dt><i class="bi bi-hash"></i> ID</dt>
+            <dd>#{{ .halcon.ID }}</dd>
+          </div>
+          <div class="tf-info-list__row">
+            <dt><i class="bi bi-tag"></i> Nombre</dt>
+            <dd>{{ .halcon.Name }}</dd>
+          </div>
+          <div class="tf-info-list__row">
+            <dt><i class="bi bi-toggle-on"></i> Estado</dt>
+            <dd>
+              {{ if .halcon.IsActive }}<span class="badge bg-success">Activo</span>
+              {{ else }}<span class="badge bg-secondary">Inactivo</span>{{ end }}
+            </dd>
+          </div>
+          <div class="tf-info-list__row">
+            <dt><i class="bi bi-clock-history"></i> Última señal</dt>
+            <dd>{{ if .halcon.LastSeen }}{{ .halcon.LastSeen.Format "02 Jan 2006 15:04" }}{{ else }}—{{ end }}</dd>
+          </div>
+          <div class="tf-info-list__row">
+            <dt><i class="bi bi-geo-alt"></i> Última posición</dt>
+            <dd>{{ if .halcon.LastLat }}{{ .halcon.LastLat }}, {{ .halcon.LastLng }}{{ else }}—{{ end }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Historial de asignaciones -->
+    <div class="tf-info-block">
+      <div class="tf-info-block__head">
+        <div class="tf-info-block__icon"><i class="bi bi-clock-history"></i></div>
+        <div class="tf-info-block__text">
+          <h2>Historial de asignaciones</h2>
+          <p>Usuarios a los que ha estado vinculado</p>
+        </div>
+      </div>
+      <div class="tf-info-block__body">
+        {{ if .assignments }}
+        <div class="table-responsive">
+          <table class="tf-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Paquete</th>
+                <th>Asignado</th>
+                <th>Liberado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ range .assignments }}
+              <tr>
+                <td>{{ if .User }}{{ .User.Name }}{{ else }}—{{ end }}</td>
+                <td>{{ if .PackageID }}{{ .PackageID }}{{ else }}—{{ end }}</td>
+                <td>{{ .AssignedAt.Format "02 Jan 15:04" }}</td>
+                <td>{{ if .EndedAt }}{{ .EndedAt.Format "02 Jan 15:04" }}{{ else }}<span class="badge bg-success">Activa</span>{{ end }}</td>
+              </tr>
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+        {{ else }}
+        <div class="tf-empty">
+          <div class="tf-empty__icon"><i class="bi bi-clock-history"></i></div>
+          <h4>Sin asignaciones</h4>
+          <p>Este halcón aún no ha sido asignado a ningún usuario.</p>
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+
+  <aside class="tf-form-page__aside">
+    <div class="tf-form-aside-card">
+      <h4 class="tf-form-aside-card__title"><i class="bi bi-link-45deg"></i> URL de conexión</h4>
+      <p class="tf-form-aside-card__hint" style="border-top:none;padding-top:0;">
+        El dispositivo GPS debe conectarse a:
+      </p>
+      <code style="display:block;padding:.65rem;background:var(--tf-surface-3);border-radius:8px;font-size:.78rem;word-break:break-all;">
+        wss://tu-dominio/halcon/{id_user}/{{ .halcon.ID }}/?token={{ .halcon.Token }}
+      </code>
+    </div>
+  </aside>
+</div>
+

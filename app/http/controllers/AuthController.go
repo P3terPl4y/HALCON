@@ -1,0 +1,173 @@
+package controllers
+
+import (
+	"strings"
+
+	"goravel/app/facades"
+	"goravel/app/models"
+	"goravel/app/requests"
+	"goravel/app/services"
+	"log"
+
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/session"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type AuthController struct {
+	userService *services.UserService
+}
+
+func NewAuthController() *AuthController {
+	return &AuthController{
+		userService: services.NewUserService(),
+	}
+}
+
+// ShowRegister - GET /register
+func (c *AuthController) ShowRegister(ctx fiber.Ctx) error {
+	facades.Log().Debug("Mostrando formulario de registro")
+	return ctx.Render("auth/register", fiber.Map{
+		"title": "Crear cuenta",
+	}, "layouts/base")
+}
+
+// Register - POST /register
+func (c *AuthController) Register(ctx fiber.Ctx) error {
+	var req requests.CreateUserRequest
+	if err := ctx.Bind().Body(&req); err != nil {
+		facades.Log().Errorf("Error al bindear datos de registro: %v", err)
+		return ctx.Render("auth/register", fiber.Map{
+			"title":       "Crear cuenta",
+			"flash_error": "Datos inválidos",
+		}, "layouts/base")
+	}
+
+	req.Role = strings.ToLower(strings.TrimSpace(req.Role))
+	log.Printf("Intento de registro - Email: %s, Rol: %s", req.Email, req.Role)
+
+	// Verificar email duplicado
+	count, err := facades.Orm().Query().Model(&models.User{}).
+		Where("email = ?", req.Email).Count()
+	if err != nil {
+		facades.Log().Errorf("Error al verificar email duplicado: %v", err)
+		return ctx.Render("auth/register", fiber.Map{
+			"title":       "Crear cuenta",
+			"flash_error": "Error al verificar los datos",
+		}, "layouts/base")
+	}
+
+	if count > 0 {
+		facades.Log().Warningf("Registro fallido - Email ya registrado: %s", req.Email)
+		return ctx.Render("auth/register", fiber.Map{
+			"title":       "Crear cuenta",
+			"flash_error": "El email ya está registrado",
+		}, "layouts/base")
+	}
+
+	user, err := c.userService.CreateUserWithRole(&req)
+	if err != nil {
+		facades.Log().Errorf("Error al crear usuario: %v", err)
+		return ctx.Render("auth/register", fiber.Map{
+			"title":       "Crear cuenta",
+			"flash_error": err.Error(),
+		}, "layouts/base")
+	}
+
+	log.Printf("Usuario registrado exitosamente - ID: %d, Email: %s", user.ID, user.Email)
+
+	sess := session.FromContext(ctx)
+	if sess == nil {
+		facades.Log().Error("session.FromContext devolvió nil en Register")
+		return ctx.Render("auth/register", fiber.Map{
+			"title":       "Crear cuenta",
+			"flash_error": "Error interno al crear la sesión",
+		}, "layouts/base")
+	}
+
+	sess.Set("user_id", user.ID)
+	sess.Set("role", user.Role)
+	log.Println(sess.Get("user_id"))
+	return ctx.Redirect().To("/profile")
+}
+
+// ShowLogin - GET /login
+func (c *AuthController) ShowLogin(ctx fiber.Ctx) error {
+	facades.Log().Debug("Mostrando formulario de login")
+	return ctx.Render("auth/login", fiber.Map{
+		"title": "Iniciar sesión",
+	}, "layouts/base")
+}
+
+// Login - POST /login
+func (c *AuthController) Login(ctx fiber.Ctx) error {
+	email := strings.ToLower(strings.TrimSpace(ctx.FormValue("email")))
+	password := ctx.FormValue("password")
+
+	log.Printf("Intento de login - Email: %s", email)
+
+	if email == "" || password == "" {
+		facades.Log().Warning("Login fallido - Email o contraseña vacíos")
+		return ctx.Render("auth/login", fiber.Map{
+			"title":       "Iniciar sesión",
+			"flash_error": "Email y contraseña son obligatorios",
+		}, "layouts/base")
+	}
+
+	// 1. USAR FirstOrFail PARA QUE LANCE ERROR SI NO EXISTE
+	var user models.User
+	if err := facades.Orm().Query().Model(&models.User{}).
+		Where("email = ?", email).FirstOrFail(&user); err != nil {
+		facades.Log().Warningf("Login fallido - Usuario no encontrado: %s", email)
+		return ctx.Render("auth/login", fiber.Map{
+			"title":       "Iniciar sesión",
+			"flash_error": "Credenciales inválidas",
+		}, "layouts/base")
+	}
+
+	log.Printf("Usuario encontrado - ID: %d, Email: %s", user.ID, user.Email)
+
+	// 2. COMPARAR CONTRASEÑA
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		facades.Log().Warningf("Login fallido - Contraseña incorrecta para: %s", email)
+		return ctx.Render("auth/login", fiber.Map{
+			"title":       "Iniciar sesión",
+			"flash_error": "Credenciales inválidas",
+		}, "layouts/base")
+	}
+
+	log.Printf("Contraseña verificada correctamente para: %s", email)
+
+	// 3. CREAR SESIÓN
+	sess := session.FromContext(ctx)
+	if sess == nil {
+		facades.Log().Error("session.FromContext devolvió nil en Login")
+		return ctx.Render("auth/login", fiber.Map{
+			"title":       "Iniciar sesión",
+			"flash_error": "Error interno al crear la sesión",
+		}, "layouts/base")
+	}
+
+	// Regenerar ID de sesión para prevenir fijación de sesión
+	if err := sess.Regenerate(); err != nil {
+		facades.Log().Warningf("No se pudo regenerar ID de sesión: %v", err)
+	}
+
+	sess.Set("user_id", user.ID)
+	sess.Set("role", user.Role)
+
+	log.Printf("Login exitoso - ID: %d, Rol: %s, Email: %s", user.ID, user.Role, user.Email)
+	log.Println(sess.Get("user_id"))
+	return ctx.Redirect().To("/profile")
+}
+
+// Logout - POST /logout
+func (c *AuthController) Logout(ctx fiber.Ctx) error {
+	sess := session.FromContext(ctx)
+	if sess != nil {
+		userID := sess.Get("user_id")
+		log.Printf("Logout - User ID: %v", userID)
+		sess.Destroy()
+	}
+	return ctx.Redirect().To("/login")
+}

@@ -1,0 +1,132 @@
+
+<div class="bf-main__header">
+  <div>
+    <h1 class="bf-main__title">Gestión de usuarios</h1>
+    <p class="bf-main__subtitle">Administra las cuentas y roles del sistema</p>
+  </div>
+  <a href="/admin/users/create" class="btn btn-primary">
+    <i class="bi bi-person-plus-fill"></i> Nuevo usuario
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="tf-home-stats tf-home-stats--3" style="margin-bottom:1.25rem;">
+  <div class="tf-home-stat">
+    <div class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-people-fill"></i></div>
+    <div class="tf-home-stat__body">
+      <span class="tf-home-stat__label">Total</span>
+      <span class="tf-home-stat__value">{{ .total }}</span>
+    </div>
+  </div>
+  <div class="tf-home-stat">
+    <div class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-person-badge-fill"></i></div>
+    <div class="tf-home-stat__body">
+      <span class="tf-home-stat__label">Moderadores</span>
+      <span class="tf-home-stat__value">{{ index .stats "moderator" }}</span>
+    </div>
+  </div>
+  <div class="tf-home-stat">
+    <div class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-shield-lock-fill"></i></div>
+    <div class="tf-home-stat__body">
+      <span class="tf-home-stat__label">Administradores</span>
+      <span class="tf-home-stat__value">{{ index .stats "admin" }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<form method="GET" action="/admin/users" class="tf-filters" style="margin-bottom:1rem;">
+  <div class="tf-filters__body">
+    <div class="tf-filters__grid">
+      <input type="text" name="search" class="form-control" placeholder="Buscar por nombre o email" value="{{ .search }}">
+      <select name="role" class="form-select">
+        <option value="">Todos los roles</option>
+        <option value="user" {{ if eq .roleFilter "user" }}selected{{ end }}>Usuario</option>
+        <option value="moderator" {{ if eq .roleFilter "moderator" }}selected{{ end }}>Moderador</option>
+        <option value="admin" {{ if eq .roleFilter "admin" }}selected{{ end }}>Administrador</option>
+      </select>
+    </div>
+    <div class="tf-filters__actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Filtrar</button>
+      <a href="/admin/users" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+    </div>
+  </div>
+</form>
+
+<!-- Tabla -->
+<div class="tf-table-card">
+  <div class="tf-table-card__header">
+    <h3 class="tf-table-card__title"><i class="bi bi-people-fill"></i> Usuarios</h3>
+    <span class="tf-table-card__count">{{ .total }} registros</span>
+  </div>
+  <div class="table-responsive">
+    <table class="tf-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th style="text-align:right;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .users }}
+        <tr>
+          <td class="tf-cell-id">#{{ .ID }}</td>
+          <td>{{ .Name }}</td>
+          <td class="tf-cell-email">{{ .Email }}</td>
+          <td>
+            {{ if eq .Role "admin" }}<span class="badge bg-danger">Admin</span>
+            {{ else if eq .Role "moderator" }}<span class="badge bg-primary">Moderador</span>
+            {{ else }}<span class="badge bg-success">Usuario</span>{{ end }}
+          </td>
+          <td>
+            {{ if .Status }}<span class="badge bg-success">Activo</span>
+            {{ else }}<span class="badge bg-secondary">Inactivo</span>{{ end }}
+          </td>
+          <td class="tf-cell-actions">
+            <a href="/admin/users/{{ .ID }}/edit" class="btn btn-outline-primary btn-sm" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="POST" action="/admin/users/{{ .ID }}/delete" style="display:inline;margin:0;"
+                  onsubmit="return confirm('¿Eliminar este usuario? Esta acción no se puede deshacer.');">
+              <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="6">
+            <div class="tf-empty">
+              <div class="tf-empty__icon"><i class="bi bi-inbox"></i></div>
+              <h4>Sin usuarios</h4>
+              <p>No hay usuarios que coincidan con los filtros aplicados.</p>
+            </div>
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  {{ if gt .totalPages 1 }}
+  <div class="tf-pagination-wrap">
+    <nav class="tf-pagination">
+      <a class="page-link {{ if eq .page 1 }}is-disabled{{ end }}"
+         href="?page={{ .prevPage }}&limit={{ .limit }}&search={{ .search }}&role={{ .roleFilter }}">
+        <i class="bi bi-chevron-left"></i>
+      </a>
+      <span class="tf-pagination__current">Página {{ .page }} de {{ .totalPages }}</span>
+      <a class="page-link {{ if eq .page .totalPages }}is-disabled{{ end }}"
+         href="?page={{ .nextPage }}&limit={{ .limit }}&search={{ .search }}&role={{ .roleFilter }}">
+        <i class="bi bi-chevron-right"></i>
+      </a>
+    </nav>
+  </div>
+  {{ end }}
+</div>
+

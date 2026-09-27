@@ -1,0 +1,254 @@
+{{ define "tracking" }}
+<div id="map"></div>
+
+<div class="panel">
+    <h1>Apolo Tracking</h1>
+    <p class="sub">Transmite tu ubicación en tiempo real</p>
+
+    <div class="field">
+        <label for="userName">Nombre</label>
+        <input type="text" id="userName" placeholder="Tu nombre o ID" autocomplete="off" maxlength="60">
+    </div>
+
+    <div class="field">
+        <label for="userRole">Rol</label>
+        <select id="userRole">
+            <option value="driver">Conductor</option>
+            <option value="client">Pasajero</option>
+        </select>
+    </div>
+
+    <button class="btn btn-primary" id="startBtn">Iniciar transmisión</button>
+    <button class="btn btn-danger" id="stopBtn" style="display:none;">Detener</button>
+
+    <div class="status" id="status">
+        <span class="dot"></span>
+        <span id="statusText">Desconectado</span>
+    </div>
+
+    <div class="coords" id="coords">— , —</div>
+</div>
+
+<div class="legend">
+    <div class="item"><span class="swatch" style="background:#dc2626"></span> Tú</div>
+    <div class="item"><span class="swatch" style="background:#4f46e5"></span> Otros usuarios</div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    // ---- Configuración ----
+    const WS_PATH = '/ws/coords';
+    const DEFAULT_CENTER = [19.4326, -99.1332]; // CDMX
+    const DEFAULT_ZOOM = 13;
+    const FOCUS_ZOOM = 15;
+    const MARKER_TTL_MS = 15000; // limpiar marcadores inactivos
+
+    // ---- Mapa ----
+    const map = L.map('map', { zoomControl: true }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    // ---- Estado ----
+    const markers = {};   // user_id -> L.marker
+    const timeouts = {};  // user_id -> timeout
+    const selfId = 'me-' + Math.random().toString(36).slice(2, 8);
+
+    let ws = null;
+    let watchId = null;
+    let active = false;
+    let myId = null;
+
+    // ---- Refs UI ----
+    const statusEl   = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const coordsEl   = document.getElementById('coords');
+    const startBtn   = document.getElementById('startBtn');
+    const stopBtn    = document.getElementById('stopBtn');
+    const nameInput  = document.getElementById('userName');
+    const roleSelect = document.getElementById('userRole');
+
+    // ---- Helpers ----
+    function setStatus(text, cls) {
+        statusText.textContent = text;
+        statusEl.className = 'status' + (cls ? ' ' + cls : '');
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+        });
+    }
+
+    function makeIcon(isSelf) {
+        return L.divIcon({
+            className: '',
+            html: '<div class="marker-icon' + (isSelf ? ' self' : '') + '"></div>',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13],
+            popupAnchor: [0, -14]
+        });
+    }
+
+    // ---- WebSocket ----
+    function connectWS() {
+        return new Promise(function (resolve, reject) {
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(proto + '//' + location.host + WS_PATH);
+
+            ws.onopen = function () { resolve(); };
+
+            ws.onerror = function (e) {
+                if (!active) reject(e);
+            };
+
+            ws.onclose = function () {
+                if (active) {
+                    setStatus('Reconectando…', 'error');
+                    setTimeout(connectWS, 2000);
+                }
+            };
+
+            ws.onmessage = function (ev) {
+                try {
+                    const c = JSON.parse(ev.data);
+                    renderRemoteMarker(c);
+                } catch (_) { /* ignorar payloads inválidos */ }
+            };
+        });
+    }
+
+    // ---- Marcadores remotos ----
+    function renderRemoteMarker(c) {
+        const uid = c.user_id;
+        if (!uid || uid === myId) return;
+
+        const latlng = [c.latitude, c.longitude];
+
+        if (markers[uid]) {
+            markers[uid].setLatLng(latlng);
+        } else {
+            markers[uid] = L.marker(latlng, { icon: makeIcon(false) })
+                .addTo(map)
+                .bindPopup('<b>' + escapeHtml(uid) + '</b><br>' + escapeHtml(c.role || 'usuario'));
+        }
+
+        // Auto-limpiar si deja de emitir
+        if (timeouts[uid]) clearTimeout(timeouts[uid]);
+        timeouts[uid] = setTimeout(function () {
+            if (markers[uid]) {
+                map.removeLayer(markers[uid]);
+                delete markers[uid];
+            }
+            delete timeouts[uid];
+        }, MARKER_TTL_MS);
+    }
+
+    // ---- Marcador propio ----
+    function updateSelfMarker(lat, lng) {
+        if (markers[selfId]) {
+            markers[selfId].setLatLng([lat, lng]);
+        } else {
+            markers[selfId] = L.marker([lat, lng], { icon: makeIcon(true) })
+                .addTo(map)
+                .bindPopup('<b>Tú</b>');
+            map.setView([lat, lng], FOCUS_ZOOM);
+        }
+    }
+
+    // ---- Geolocalización ----
+    function startWatching() {
+        if (!navigator.geolocation) {
+            setStatus('Geolocalización no soportada', 'error');
+            stopBroadcast();
+            return;
+        }
+
+        watchId = navigator.geolocation.watchPosition(
+            function (pos) {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+
+                coordsEl.textContent = lat.toFixed(6) + ' , ' + lng.toFixed(6);
+                updateSelfMarker(lat, lng);
+
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        user_id: myId,
+                        latitude: lat,
+                        longitude: lng,
+                        role: roleSelect.value
+                    }));
+                }
+            },
+            function (err) {
+                setStatus('Error GPS: ' + err.message, 'error');
+            },
+            { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+        );
+    }
+
+    function stopWatching() {
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+    }
+
+    // ---- Ciclo de transmisión ----
+    async function startBroadcast() {
+        const name = nameInput.value.trim();
+        if (!name) {
+            nameInput.focus();
+            setStatus('Ingresa un nombre', 'error');
+            return;
+        }
+
+        myId = name;
+        setStatus('Conectando…');
+
+        try {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                await connectWS();
+            }
+        } catch (_) {
+            setStatus('No se pudo conectar', 'error');
+            return;
+        }
+
+        active = true;
+        setStatus('Transmitiendo', 'active');
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'block';
+        nameInput.disabled = true;
+        roleSelect.disabled = true;
+
+        startWatching();
+    }
+
+    function stopBroadcast() {
+        active = false;
+        stopWatching();
+        if (ws) { try { ws.close(); } catch (_) {} ws = null; }
+        setStatus('Detenido');
+        startBtn.style.display = 'block';
+        stopBtn.style.display = 'none';
+        nameInput.disabled = false;
+        roleSelect.disabled = false;
+    }
+
+    // ---- Listeners ----
+    startBtn.addEventListener('click', startBroadcast);
+    stopBtn.addEventListener('click', stopBroadcast);
+
+    // Enter en el input dispara el inicio
+    nameInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') startBroadcast();
+    });
+})();
+</script>
+{{ end }}

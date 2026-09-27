@@ -1,0 +1,67 @@
+
+<div class="bf-main__header">
+  <div>
+    <h1 class="bf-main__title">{{ if eq .mode "edit" }}Editar halcón{{ else }}Crear halcón{{ end }}</h1>
+    <p class="bf-main__subtitle">Configura el dispositivo GPS</p>
+  </div>
+  <a href="/admin/halcones" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="tf-form-page">
+  <div class="tf-form-page__main">
+    <div class="tf-form-section">
+      <div class="tf-form-section__header">
+        <span class="tf-form-section__num">01</span>
+        <div class="tf-form-section__title-wrap">
+          <h3>Datos del halcón</h3>
+          <p>Identificación del dispositivo</p>
+        </div>
+        <span class="tf-form-section__icon"><i class="bi bi-broadcast"></i></span>
+      </div>
+      <div class="tf-form-section__body">
+        <form method="POST" action="{{ if eq .mode "edit" }}/admin/halcones/{{ .halcon.ID }}{{ else }}/admin/halcones{{ end }}">
+          <div class="tf-form-row">
+            <div class="tf-col-12">
+              <label class="form-label">Nombre del halcón <span class="req">*</span></label>
+              <input type="text" name="name" class="form-control" required
+                     placeholder="Ej: Paquete #1234 - Zona Norte"
+                     value="{{ if .old }}{{ .old.Name }}{{ else if .halcon }}{{ .halcon.Name }}{{ end }}">
+              <small class="tf-field-hint">Un nombre descriptivo para identificar el envío</small>
+            </div>
+
+            {{ if eq .mode "edit" }}
+            <div class="tf-col-12">
+              <label class="form-label">Estado</label>
+              <div class="tf-check">
+                <input type="checkbox" name="is_active" id="is_active"
+                       {{ if .halcon.IsActive }}checked{{ end }}>
+                <label for="is_active">Marcar como activo</label>
+              </div>
+              <small class="tf-field-hint">Solo los halcones activos aparecen en el dashboard del usuario</small>
+            </div>
+            {{ end }}
+          </div>
+
+          <div class="tf-actions">
+            <a href="/admin/halcones" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg"></i> {{ if eq .mode "edit" }}Guardar cambios{{ else }}Crear halcón{{ end }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <aside class="tf-form-page__aside">
+    <div class="tf-form-aside-card">
+      <h4 class="tf-form-aside-card__title"><i class="bi bi-key-fill"></i> Token de autenticación</h4>
+      <p class="tf-form-aside-card__hint" style="border-top:none;padding-top:0;">
+        Al crear el halcón, el sistema genera automáticamente un token único.
+        Ese token se entrega al dispositivo GPS para que pueda autenticarse
+        en el WebSocket <code>/halcon/:id_user/:id_halcon/</code>.
+      </p>
+    </div>
+  </aside>
+</div>
+

@@ -1,0 +1,69 @@
+<div class="tf-page-header">
+  <div>
+    <h1><i class="bi bi-person-gear"></i> Editar perfil</h1>
+    <p>Actualiza tu información personal</p>
+  </div>
+  <a href="/profile" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+</div>
+
+{{ if .flash_error }}<div class="alert alert-danger">{{ .flash_error }}</div>{{ end }}
+
+<form method="POST" action="/profile/edit" class="tf-form-page">
+  <div class="tf-form-page__main">
+    <div class="tf-form-card">
+
+      <section class="tf-form-block" data-block="account">
+        <header class="tf-form-block__head">
+          <i class="bi bi-person-vcard-fill tf-form-block__icon"></i>
+          <div class="tf-form-block__text">
+            <h2>Datos básicos</h2>
+            <p>Tu identidad en ALCON</p>
+          </div>
+        </header>
+        <div class="tf-form-block__body">
+          <div class="tf-form-row">
+            <div class="tf-col-6 tf-field">
+              <label class="form-label">Nombre</label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ if .old }}{{ .old.Name }}{{ else }}{{ .user.Name }}{{ end }}">
+            </div>
+            <div class="tf-col-6 tf-field">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control"
+                     value="{{ if .old }}{{ .old.Email }}{{ else }}{{ .user.Email }}{{ end }}">
+            </div>
+            <div class="tf-col-12 tf-field">
+              <label class="form-label">Nueva contraseña <span class="opt">opcional</span></label>
+              <input type="password" name="password" class="form-control" minlength="8"
+                     placeholder="Dejar vacío para no cambiar">
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <aside class="tf-form-page__aside">
+    <div class="tf-rail-card tf-rail-card--user">
+      <div class="tf-rail-user">
+        <span class="tf-rail-user__avatar"><i class="bi bi-person-fill"></i></span>
+        <div class="tf-rail-user__info">
+          <strong>{{ .user.Name }}</strong>
+          <span class="tf-rail-user__role">{{ .user.Role }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="tf-rail-card tf-rail-card--actions">
+      <button type="submit" class="btn btn-primary btn-lg tf-w-full">
+        <i class="bi bi-check-circle"></i> Guardar cambios
+      </button>
+      <a href="/profile" class="btn btn-secondary tf-w-full">
+        <i class="bi bi-x-circle"></i> Cancelar
+      </a>
+    </div>
+  </aside>
+</form>
+
