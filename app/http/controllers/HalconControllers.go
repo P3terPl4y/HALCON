@@ -18,7 +18,7 @@ type HalconController struct {
 func NewHalconController() *HalconController {
 	return &HalconController{
 		halconService: services.NewHalconService(),
-		userService:services.NewUserService()
+		userService:services.NewUserService(),
 	}
 }
 
