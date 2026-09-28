@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"goravel/app/facades"
-
+"log"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
 )
@@ -11,13 +11,13 @@ func AuthMiddleware() fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		sess := session.FromContext(ctx)
 		if sess == nil {
-			facades.Log().Warningf("AuthMiddleware - Sesión nil en %s", ctx.Path())
+			log.Printf("AuthMiddleware - Sesión nil en %s", ctx.Path())
 			return ctx.Redirect().To("/login")
 		}
 
 		userID := sess.Get("user_id")
 		if userID == nil {
-			facades.Log().Warningf("AuthMiddleware - user_id no encontrado en sesión para %s", ctx.Path())
+			log.Printf("AuthMiddleware - user_id no encontrado en sesión para %s", ctx.Path())
 			return ctx.Redirect().To("/login")
 		}
 
@@ -38,7 +38,7 @@ func AuthMiddleware() fiber.Handler {
 		}
 
 		ctx.Locals("user_id", uid)
-		facades.Log().Debugf("AuthMiddleware - Usuario autenticado: %d, Path: %s", uid, ctx.Path())
+		log.Printf("AuthMiddleware - Usuario autenticado: %d, Path: %s", uid, ctx.Path())
 
 		if role, ok := sess.Get("role").(string); ok {
 			ctx.Locals("role", role)
