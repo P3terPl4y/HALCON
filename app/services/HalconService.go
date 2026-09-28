@@ -296,39 +296,74 @@ func (s *HalconService) ListByModerator(
     moderatorID uint, page, limit int,
     search, active string, isAdmin bool,
 ) ([]HalconWithAssignment, int64, error) {
-    if page < 1 { page = 1 }
-    if limit < 1 || limit > 100 { limit = 20 }
+    if page < 1 {
+        page = 1
+    }
+    if limit < 1 || limit > 100 {
+        limit = 20
+    }
 
-    q := facades.Orm().Query().Model(&models.Halcon{}).
-        Select("halcones.*, users.name AS assigned_user_name, users.email AS assigned_user_email").
-        LeftJoin("halcon_assignments", "halcon_assignments.halcon_id = halcones.id AND halcon_assignments.ended_at IS NULL").
-        LeftJoin("users", "users.id = halcon_assignments.user_id")
+    // Base query con LEFT JOIN como string
+    baseQuery := facades.Orm().Query().Model(&models.Halcon{}).
+        Join(
+            "LEFT JOIN halcon_assignments ON halcon_assignments.halcon_id = halcones.id " +
+                "AND halcon_assignments.ended_at IS NULL " +
+                "LEFT JOIN users ON users.id = halcon_assignments.user_id",
+        )
 
     if !isAdmin {
-        q = q.Where("halcon_assignments.moderator_id = ?", moderatorID).
-              OrWhere("halcones.id IN (SELECT halcon_id FROM halcon_assignments WHERE moderator_id = ?)", moderatorID)
+        baseQuery = baseQuery.Where(
+            "halcon_assignments.moderator_id = ?", moderatorID,
+        )
     }
     if search != "" {
-        q = q.Where("halcones.name LIKE ?", "%"+search+"%")
+        baseQuery = baseQuery.Where("halcones.name LIKE ?", "%"+search+"%")
     }
     if active == "1" {
-        q = q.Where("halcones.is_active = ?", true)
+        baseQuery = baseQuery.Where("halcones.is_active = ?", true)
     } else if active == "0" {
-        q = q.Where("halcones.is_active = ?", false)
+        baseQuery = baseQuery.Where("halcones.is_active = ?", false)
     }
 
-    var rows []HalconWithAssignment
-    var total int64
-
-    // Nota: la implementación exacta de JOIN+count depende de tu versión de Goravel.
-    // Si Paginate no funciona con joins, haz Count y Find por separado.
-
-    if err := q.Count(&total); err != nil {
+    // Contar con la misma query (sin select)
+    total, err := baseQuery.Count()
+    if err != nil {
         return nil, 0, err
     }
-    if err := q.Offset((page-1)*limit).Limit(limit).
-        Order("halcones.id DESC").Find(&rows); err != nil {
+
+    // Cargar halcones
+    var halcones []models.Halcon
+    if err := baseQuery.
+        Select("halcones.*").
+        Offset((page - 1) * limit).
+        Limit(limit).
+        Order("halcones.id DESC").
+        Find(&halcones); err != nil {
         return nil, 0, err
     }
-    return rows, total, nil
+
+    // Resolver el usuario asignado (N+1 controlado)
+    result := make([]HalconWithAssignment, 0, len(halcones))
+    for _, h := range halcones {
+        item := HalconWithAssignment{Halcon: h}
+
+        var a models.HalconAssignment
+        if err := facades.Orm().Query().
+            Where("halcon_id = ?", h.ID).
+            Where("ended_at IS NULL").
+            Order("assigned_at DESC").
+            First(&a); err == nil {
+
+            var u models.User
+            if err := facades.Orm().Query().
+                Where("id = ?", a.UserID).
+                First(&u); err == nil {
+                item.AssignedUser = &u
+                item.AssignedAt = &a.AssignedAt
+            }
+        }
+        result = append(result, item)
+    }
+
+    return result, total, nil
 }
