@@ -13,6 +13,7 @@ import (
 
 type HalconController struct {
 	halconService *services.HalconService
+	userService *services.UserService
 }
 
 func NewHalconController() *HalconController {
