@@ -305,6 +305,7 @@
 
     try {
       ws = new WebSocket(url);
+      console.log(url)
     } catch (e) {
       log('err', 'Error al crear WebSocket: ' + e.message);
       setConnStatus('Error', 'off');

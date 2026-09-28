@@ -311,10 +311,10 @@
     /* ============================================================
        WebSocket
        ============================================================ */
-    function wsUrl() {
-      var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      return proto + '//' + location.host + "/dashboard/35";
-    }
+   function wsUrl() {
+  var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return proto + '//' + location.host + '/dashboard/' + USER_ID + '/';
+}
 
     function connect() {
       if (ws && (ws.readyState === WebSocket.OPEN ||
@@ -327,7 +327,7 @@
       setStatus('Conectando…', 'is-idle');
 
       try {
-        ws = new WebSocket("ws://localhost:3000/dashboard/35");
+        ws = new WebSocket(url);
       } catch (e) {
         console.error('[ALCON] Error al crear WebSocket:', e);
         scheduleReconnect();
