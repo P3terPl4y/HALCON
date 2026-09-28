@@ -3,11 +3,11 @@ package controllers
 import (
 	"strings"
 
-		"github.com/gofiber/fiber/v3/middleware/session"
+	"github.com/gofiber/fiber/v3/middleware/session"
 
 	"goravel/app/requests"
 	"goravel/app/services"
-"github.com/gofiber/fiber/v3/middleware/csrf"
+	"github.com/gofiber/fiber/v3/middleware/csrf"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -24,7 +24,7 @@ func NewHalconController() *HalconController {
 }
 
 func (c *HalconController) Index(ctx fiber.Ctx) error {
-	sess:=session.FormContext(ctx)
+	sess := session.FromContext(ctx)
     moderatorID, err := sess.Get("user_id").(uint)
     role, _ := ctx.Locals("role").(string)
 
