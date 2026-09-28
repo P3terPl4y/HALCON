@@ -1,0 +1,376 @@
+2026/09/28 20:34:20 🔍 Verificando existencia de usuario administrador...
+2026/09/28 20:34:20 ✅ Usuario administrador ya existe (ID: 1, Email: admin@example.com)
+2026/09/28 20:34:20 views: parsed template: admin/dashboard
+2026/09/28 20:34:20 views: parsed template: admin/halcones/assign
+2026/09/28 20:34:20 views: parsed template: admin/halcones/form
+2026/09/28 20:34:20 views: parsed template: admin/halcones/index
+2026/09/28 20:34:20 views: parsed template: admin/halcones/show
+2026/09/28 20:34:20 views: parsed template: admin/users/form
+2026/09/28 20:34:20 views: parsed template: admin/users/index
+2026/09/28 20:34:20 views: parsed template: auth/login
+2026/09/28 20:34:20 views: parsed template: auth/register
+2026/09/28 20:34:20 views: parsed template: dashboard
+2026/09/28 20:34:20 views: parsed template: layouts/base
+2026/09/28 20:34:20 views: parsed template: layouts/bf-shell
+2026/09/28 20:34:20 views: parsed template: profile/edit
+2026/09/28 20:34:20 views: parsed template: profile/show
+2026/09/28 20:34:20 views: parsed template: tracking/index
+2026/09/28 20:34:20 🚀 ALCON escuchando en :3000
+
+    _______ __
+   / ____(_) /_  ___  _____
+  / /_  / / __ \/ _ \/ ___/
+ / __/ / / /_/ /  __/ /
+/_/   /_/_.___/\___/_/          v3.5.0
+--------------------------------------------------
+INFO Server started on: 	http://127.0.0.1:3300 (bound on host 0.0.0.0 and port 3300)
+INFO Total handlers: 		60
+INFO Prefork: 			Disabled
+INFO PID: 			2655783
+INFO Total process count: 	1
+
+20:34:25 | 200 |   22.108379ms |       127.0.0.1 | GET     | /                            
+20:34:25 | 200 |     192.069µs |       127.0.0.1 | GET     | /                            
+20:34:25 | 303 |    1.569009ms |       127.0.0.1 | GET     | /favicon.ico                 
+2026/09/28 20:34:26 views: parsed template: admin/dashboard
+2026/09/28 20:34:26 views: parsed template: admin/halcones/assign
+2026/09/28 20:34:26 views: parsed template: admin/halcones/form
+2026/09/28 20:34:26 views: parsed template: admin/halcones/index
+2026/09/28 20:34:26 views: parsed template: admin/halcones/show
+2026/09/28 20:34:26 views: parsed template: admin/users/form
+2026/09/28 20:34:26 views: parsed template: admin/users/index
+2026/09/28 20:34:26 views: parsed template: auth/login
+2026/09/28 20:34:26 views: parsed template: auth/register
+2026/09/28 20:34:26 views: parsed template: dashboard
+2026/09/28 20:34:26 views: parsed template: layouts/base
+2026/09/28 20:34:26 views: parsed template: layouts/bf-shell
+2026/09/28 20:34:26 views: parsed template: profile/edit
+2026/09/28 20:34:26 views: parsed template: profile/show
+2026/09/28 20:34:26 views: parsed template: tracking/index
+20:34:25 | 200 |    9.322704ms |       127.0.0.1 | GET     | /login                       
+20:34:30 | 303 |     982.397µs |       127.0.0.1 | GET     | /l/                          
+2026/09/28 20:34:31 views: parsed template: admin/dashboard
+2026/09/28 20:34:31 views: parsed template: admin/halcones/assign
+2026/09/28 20:34:31 views: parsed template: admin/halcones/form
+2026/09/28 20:34:31 views: parsed template: admin/halcones/index
+2026/09/28 20:34:31 views: parsed template: admin/halcones/show
+2026/09/28 20:34:31 views: parsed template: admin/users/form
+2026/09/28 20:34:31 views: parsed template: admin/users/index
+2026/09/28 20:34:31 views: parsed template: auth/login
+2026/09/28 20:34:31 views: parsed template: auth/register
+2026/09/28 20:34:31 views: parsed template: dashboard
+2026/09/28 20:34:31 views: parsed template: layouts/base
+2026/09/28 20:34:31 views: parsed template: layouts/bf-shell
+2026/09/28 20:34:31 views: parsed template: profile/edit
+2026/09/28 20:34:31 views: parsed template: profile/show
+2026/09/28 20:34:31 views: parsed template: tracking/index
+20:34:31 | 200 |   11.314034ms |       127.0.0.1 | GET     | /login                       
+20:34:32 | 303 |    1.206805ms |       127.0.0.1 | GET     | /favicon.ico                 
+2026/09/28 20:34:49 Intento de login - Email: elvinfelipetorres@gmail.com
+2026/09/28 20:34:49 views: parsed template: admin/dashboard
+2026/09/28 20:34:49 views: parsed template: admin/halcones/assign
+2026/09/28 20:34:49 views: parsed template: admin/halcones/form
+2026/09/28 20:34:49 views: parsed template: admin/halcones/index
+2026/09/28 20:34:49 views: parsed template: admin/halcones/show
+2026/09/28 20:34:49 views: parsed template: admin/users/form
+2026/09/28 20:34:49 views: parsed template: admin/users/index
+2026/09/28 20:34:49 views: parsed template: auth/login
+2026/09/28 20:34:49 views: parsed template: auth/register
+2026/09/28 20:34:49 views: parsed template: dashboard
+2026/09/28 20:34:49 views: parsed template: layouts/base
+2026/09/28 20:34:49 views: parsed template: layouts/bf-shell
+2026/09/28 20:34:49 views: parsed template: profile/edit
+2026/09/28 20:34:49 views: parsed template: profile/show
+2026/09/28 20:34:49 views: parsed template: tracking/index
+20:34:49 | 200 |   17.072884ms |       127.0.0.1 | POST    | /login                       
+20:34:50 | 303 |     890.487µs |       127.0.0.1 | GET     | /favicon.ico                 
+2026/09/28 20:34:50 views: parsed template: admin/dashboard
+2026/09/28 20:34:50 views: parsed template: admin/halcones/assign
+2026/09/28 20:34:50 views: parsed template: admin/halcones/form
+2026/09/28 20:34:50 views: parsed template: admin/halcones/index
+2026/09/28 20:34:50 views: parsed template: admin/halcones/show
+2026/09/28 20:34:50 views: parsed template: admin/users/form
+2026/09/28 20:34:50 views: parsed template: admin/users/index
+2026/09/28 20:34:50 views: parsed template: auth/login
+2026/09/28 20:34:50 views: parsed template: auth/register
+2026/09/28 20:34:50 views: parsed template: dashboard
+2026/09/28 20:34:50 views: parsed template: layouts/base
+2026/09/28 20:34:50 views: parsed template: layouts/bf-shell
+2026/09/28 20:34:50 views: parsed template: profile/edit
+2026/09/28 20:34:50 views: parsed template: profile/show
+2026/09/28 20:34:50 views: parsed template: tracking/index
+20:34:50 | 200 |   10.933839ms |       127.0.0.1 | GET     | /login                       
+2026/09/28 20:34:57 Intento de login - Email: admin@example.com
+2026/09/28 20:34:57 Usuario encontrado - ID: 1, Email: admin@example.com
+2026/09/28 20:34:57 Contraseña verificada correctamente para: admin@example.com
+2026/09/28 20:34:57 Login exitoso - ID: 1, Rol: admin, Email: admin@example.com
+2026/09/28 20:34:57 1
+20:34:57 | 303 |  546.550681ms |       127.0.0.1 | POST    | /login                       
+2026/09/28 20:34:57 views: parsed template: admin/dashboard
+2026/09/28 20:34:57 views: parsed template: admin/halcones/assign
+2026/09/28 20:34:57 views: parsed template: admin/halcones/form
+2026/09/28 20:34:57 views: parsed template: admin/halcones/index
+2026/09/28 20:34:57 views: parsed template: admin/halcones/show
+2026/09/28 20:34:57 views: parsed template: admin/users/form
+2026/09/28 20:34:57 views: parsed template: admin/users/index
+2026/09/28 20:34:57 views: parsed template: auth/login
+2026/09/28 20:34:57 views: parsed template: auth/register
+2026/09/28 20:34:57 views: parsed template: dashboard
+2026/09/28 20:34:57 views: parsed template: layouts/base
+2026/09/28 20:34:57 views: parsed template: layouts/bf-shell
+2026/09/28 20:34:57 views: parsed template: profile/edit
+2026/09/28 20:34:57 views: parsed template: profile/show
+2026/09/28 20:34:57 views: parsed template: tracking/index
+20:34:57 | 200 |   38.295729ms |       127.0.0.1 | GET     | /profile                     
+20:34:58 | 404 |    22.58156ms |       127.0.0.1 | GET     | /css/profile-map.css          | Not Found
+20:34:58 | 404 |    1.295728ms |       127.0.0.1 | GET     | /favicon.ico                  | Not Found
+2026/09/28 20:35:07 Logout - User ID: 1
+20:35:07 | 303 |     360.635µs |       127.0.0.1 | POST    | /logout                      
+2026/09/28 20:35:07 views: parsed template: admin/dashboard
+2026/09/28 20:35:07 views: parsed template: admin/halcones/assign
+2026/09/28 20:35:07 views: parsed template: admin/halcones/form
+2026/09/28 20:35:07 views: parsed template: admin/halcones/index
+2026/09/28 20:35:07 views: parsed template: admin/halcones/show
+2026/09/28 20:35:07 views: parsed template: admin/users/form
+2026/09/28 20:35:07 views: parsed template: admin/users/index
+2026/09/28 20:35:07 views: parsed template: auth/login
+2026/09/28 20:35:07 views: parsed template: auth/register
+2026/09/28 20:35:07 views: parsed template: dashboard
+2026/09/28 20:35:07 views: parsed template: layouts/base
+2026/09/28 20:35:07 views: parsed template: layouts/bf-shell
+2026/09/28 20:35:07 views: parsed template: profile/edit
+2026/09/28 20:35:07 views: parsed template: profile/show
+2026/09/28 20:35:07 views: parsed template: tracking/index
+20:35:07 | 200 |    9.698959ms |       127.0.0.1 | GET     | /login                       
+2026/09/28 20:35:10 views: parsed template: admin/dashboard
+2026/09/28 20:35:10 views: parsed template: admin/halcones/assign
+2026/09/28 20:35:10 views: parsed template: admin/halcones/form
+2026/09/28 20:35:10 views: parsed template: admin/halcones/index
+2026/09/28 20:35:10 views: parsed template: admin/halcones/show
+2026/09/28 20:35:10 views: parsed template: admin/users/form
+2026/09/28 20:35:10 views: parsed template: admin/users/index
+2026/09/28 20:35:10 views: parsed template: auth/login
+2026/09/28 20:35:10 views: parsed template: auth/register
+2026/09/28 20:35:10 views: parsed template: dashboard
+2026/09/28 20:35:10 views: parsed template: layouts/base
+2026/09/28 20:35:10 views: parsed template: layouts/bf-shell
+2026/09/28 20:35:10 views: parsed template: profile/edit
+2026/09/28 20:35:10 views: parsed template: profile/show
+2026/09/28 20:35:10 views: parsed template: tracking/index
+20:35:10 | 200 |    9.968531ms |       127.0.0.1 | GET     | /register                    
+2026/09/28 20:35:33 Intento de registro - Email: yoyo@gmail.com, Rol: 
+2026/09/28 20:35:33 Usuario registrado exitosamente - ID: 2, Email: yoyo@gmail.com
+2026/09/28 20:35:33 2
+20:35:32 | 303 |  197.183262ms |       127.0.0.1 | POST    | /register                    
+2026/09/28 20:35:33 views: parsed template: admin/dashboard
+2026/09/28 20:35:33 views: parsed template: admin/halcones/assign
+2026/09/28 20:35:33 views: parsed template: admin/halcones/form
+2026/09/28 20:35:33 views: parsed template: admin/halcones/index
+2026/09/28 20:35:33 views: parsed template: admin/halcones/show
+2026/09/28 20:35:33 views: parsed template: admin/users/form
+2026/09/28 20:35:33 views: parsed template: admin/users/index
+2026/09/28 20:35:33 views: parsed template: auth/login
+2026/09/28 20:35:33 views: parsed template: auth/register
+2026/09/28 20:35:33 views: parsed template: dashboard
+2026/09/28 20:35:33 views: parsed template: layouts/base
+2026/09/28 20:35:33 views: parsed template: layouts/bf-shell
+2026/09/28 20:35:33 views: parsed template: profile/edit
+2026/09/28 20:35:33 views: parsed template: profile/show
+2026/09/28 20:35:33 views: parsed template: tracking/index
+20:35:33 | 200 |    10.88887ms |       127.0.0.1 | GET     | /profile                     
+20:35:33 | 404 |     2.80892ms |       127.0.0.1 | GET     | /css/profile-map.css          | Not Found
+2026/09/28 20:35:46 Logout - User ID: 2
+20:35:46 | 303 |     537.289µs |       127.0.0.1 | POST    | /logout                      
+2026/09/28 20:35:46 views: parsed template: admin/dashboard
+2026/09/28 20:35:46 views: parsed template: admin/halcones/assign
+2026/09/28 20:35:46 views: parsed template: admin/halcones/form
+2026/09/28 20:35:46 views: parsed template: admin/halcones/index
+2026/09/28 20:35:46 views: parsed template: admin/halcones/show
+2026/09/28 20:35:46 views: parsed template: admin/users/form
+2026/09/28 20:35:46 views: parsed template: admin/users/index
+2026/09/28 20:35:46 views: parsed template: auth/login
+2026/09/28 20:35:46 views: parsed template: auth/register
+2026/09/28 20:35:46 views: parsed template: dashboard
+2026/09/28 20:35:46 views: parsed template: layouts/base
+2026/09/28 20:35:46 views: parsed template: layouts/bf-shell
+2026/09/28 20:35:46 views: parsed template: profile/edit
+2026/09/28 20:35:46 views: parsed template: profile/show
+2026/09/28 20:35:46 views: parsed template: tracking/index
+20:35:46 | 200 |   10.068615ms |       127.0.0.1 | GET     | /login                       
+2026/09/28 20:35:51 Intento de login - Email: admin@example.com
+2026/09/28 20:35:51 Usuario encontrado - ID: 1, Email: admin@example.com
+2026/09/28 20:35:52 Contraseña verificada correctamente para: admin@example.com
+2026/09/28 20:35:52 Login exitoso - ID: 1, Rol: admin, Email: admin@example.com
+2026/09/28 20:35:52 1
+20:35:51 | 303 |  546.226247ms |       127.0.0.1 | POST    | /login                       
+2026/09/28 20:35:52 views: parsed template: admin/dashboard
+2026/09/28 20:35:52 views: parsed template: admin/halcones/assign
+2026/09/28 20:35:52 views: parsed template: admin/halcones/form
+2026/09/28 20:35:52 views: parsed template: admin/halcones/index
+2026/09/28 20:35:52 views: parsed template: admin/halcones/show
+2026/09/28 20:35:52 views: parsed template: admin/users/form
+2026/09/28 20:35:52 views: parsed template: admin/users/index
+2026/09/28 20:35:52 views: parsed template: auth/login
+2026/09/28 20:35:52 views: parsed template: auth/register
+2026/09/28 20:35:52 views: parsed template: dashboard
+2026/09/28 20:35:52 views: parsed template: layouts/base
+2026/09/28 20:35:52 views: parsed template: layouts/bf-shell
+2026/09/28 20:35:52 views: parsed template: profile/edit
+2026/09/28 20:35:52 views: parsed template: profile/show
+2026/09/28 20:35:52 views: parsed template: tracking/index
+20:35:52 | 200 |    8.775807ms |       127.0.0.1 | GET     | /profile                     
+20:35:52 | 404 |    1.313415ms |       127.0.0.1 | GET     | /css/profile-map.css          | Not Found
+20:36:02 | 404 |    3.851103ms |       127.0.0.1 | GET     | /admin/userds'                | Not Found
+20:36:07 | 404 |    4.262294ms |       127.0.0.1 | GET     | /admin/users'                 | Not Found
+2026/09/28 20:36:09 views: parsed template: admin/dashboard
+2026/09/28 20:36:09 views: parsed template: admin/halcones/assign
+2026/09/28 20:36:09 views: parsed template: admin/halcones/form
+2026/09/28 20:36:09 views: parsed template: admin/halcones/index
+2026/09/28 20:36:09 views: parsed template: admin/halcones/show
+2026/09/28 20:36:09 views: parsed template: admin/users/form
+2026/09/28 20:36:09 views: parsed template: admin/users/index
+2026/09/28 20:36:09 views: parsed template: auth/login
+2026/09/28 20:36:09 views: parsed template: auth/register
+2026/09/28 20:36:09 views: parsed template: dashboard
+2026/09/28 20:36:09 views: parsed template: layouts/base
+2026/09/28 20:36:09 views: parsed template: layouts/bf-shell
+2026/09/28 20:36:10 views: parsed template: profile/edit
+2026/09/28 20:36:10 views: parsed template: profile/show
+2026/09/28 20:36:10 views: parsed template: tracking/index
+20:36:09 | 200 |   31.964547ms |       127.0.0.1 | GET     | /admin/users                 
+2026/09/28 20:36:13 views: parsed template: admin/dashboard
+2026/09/28 20:36:13 views: parsed template: admin/halcones/assign
+2026/09/28 20:36:13 views: parsed template: admin/halcones/form
+2026/09/28 20:36:13 views: parsed template: admin/halcones/index
+2026/09/28 20:36:13 views: parsed template: admin/halcones/show
+2026/09/28 20:36:13 views: parsed template: admin/users/form
+2026/09/28 20:36:13 views: parsed template: admin/users/index
+2026/09/28 20:36:13 views: parsed template: auth/login
+2026/09/28 20:36:13 views: parsed template: auth/register
+2026/09/28 20:36:13 views: parsed template: dashboard
+2026/09/28 20:36:13 views: parsed template: layouts/base
+2026/09/28 20:36:13 views: parsed template: layouts/bf-shell
+2026/09/28 20:36:13 views: parsed template: profile/edit
+2026/09/28 20:36:13 views: parsed template: profile/show
+2026/09/28 20:36:13 views: parsed template: tracking/index
+20:36:13 | 200 |   15.344963ms |       127.0.0.1 | GET     | /admin/users/2/edit          
+20:36:19 | 303 |  200.427076ms |       127.0.0.1 | POST    | /admin/users/2               
+2026/09/28 20:36:19 views: parsed template: admin/dashboard
+2026/09/28 20:36:19 views: parsed template: admin/halcones/assign
+2026/09/28 20:36:19 views: parsed template: admin/halcones/form
+2026/09/28 20:36:19 views: parsed template: admin/halcones/index
+2026/09/28 20:36:19 views: parsed template: admin/halcones/show
+2026/09/28 20:36:19 views: parsed template: admin/users/form
+2026/09/28 20:36:19 views: parsed template: admin/users/index
+2026/09/28 20:36:19 views: parsed template: auth/login
+2026/09/28 20:36:19 views: parsed template: auth/register
+2026/09/28 20:36:19 views: parsed template: dashboard
+2026/09/28 20:36:19 views: parsed template: layouts/base
+2026/09/28 20:36:19 views: parsed template: layouts/bf-shell
+2026/09/28 20:36:19 views: parsed template: profile/edit
+2026/09/28 20:36:19 views: parsed template: profile/show
+2026/09/28 20:36:19 views: parsed template: tracking/index
+20:36:19 | 200 |   16.649207ms |       127.0.0.1 | GET     | /admin/users                 
+2026/09/28 20:36:23 Logout - User ID: 1
+20:36:23 | 303 |      413.07µs |       127.0.0.1 | POST    | /logout                      
+2026/09/28 20:36:23 views: parsed template: admin/dashboard
+2026/09/28 20:36:23 views: parsed template: admin/halcones/assign
+2026/09/28 20:36:23 views: parsed template: admin/halcones/form
+2026/09/28 20:36:23 views: parsed template: admin/halcones/index
+2026/09/28 20:36:23 views: parsed template: admin/halcones/show
+2026/09/28 20:36:23 views: parsed template: admin/users/form
+2026/09/28 20:36:23 views: parsed template: admin/users/index
+2026/09/28 20:36:23 views: parsed template: auth/login
+2026/09/28 20:36:23 views: parsed template: auth/register
+2026/09/28 20:36:23 views: parsed template: dashboard
+2026/09/28 20:36:23 views: parsed template: layouts/base
+2026/09/28 20:36:23 views: parsed template: layouts/bf-shell
+2026/09/28 20:36:23 views: parsed template: profile/edit
+2026/09/28 20:36:23 views: parsed template: profile/show
+2026/09/28 20:36:23 views: parsed template: tracking/index
+20:36:23 | 200 |   13.620349ms |       127.0.0.1 | GET     | /login                       
+2026/09/28 20:36:26 Intento de login - Email: yoyo@gmail.com
+2026/09/28 20:36:26 Usuario encontrado - ID: 2, Email: yoyo@gmail.com
+2026/09/28 20:36:26 Contraseña verificada correctamente para: yoyo@gmail.com
+2026/09/28 20:36:26 Login exitoso - ID: 2, Rol: moderator, Email: yoyo@gmail.com
+2026/09/28 20:36:26 2
+20:36:26 | 303 |  175.461833ms |       127.0.0.1 | POST    | /login                       
+2026/09/28 20:36:27 views: parsed template: admin/dashboard
+2026/09/28 20:36:27 views: parsed template: admin/halcones/assign
+2026/09/28 20:36:27 views: parsed template: admin/halcones/form
+2026/09/28 20:36:27 views: parsed template: admin/halcones/index
+2026/09/28 20:36:27 views: parsed template: admin/halcones/show
+2026/09/28 20:36:27 views: parsed template: admin/users/form
+2026/09/28 20:36:27 views: parsed template: admin/users/index
+2026/09/28 20:36:27 views: parsed template: auth/login
+2026/09/28 20:36:27 views: parsed template: auth/register
+2026/09/28 20:36:27 views: parsed template: dashboard
+2026/09/28 20:36:27 views: parsed template: layouts/base
+2026/09/28 20:36:27 views: parsed template: layouts/bf-shell
+2026/09/28 20:36:27 views: parsed template: profile/edit
+2026/09/28 20:36:27 views: parsed template: profile/show
+2026/09/28 20:36:27 views: parsed template: tracking/index
+20:36:26 | 200 |   22.180554ms |       127.0.0.1 | GET     | /profile                     
+20:36:27 | 404 |      974.95µs |       127.0.0.1 | GET     | /css/profile-map.css          | Not Found
+20:36:32 | 426 |     533.791µs |       127.0.0.1 | GET     | /halcon                       | Upgrade Required
+20:36:43 | 404 |     5.63111ms |       127.0.0.1 | GET     | /moderator/halcon             | Not Found
+20:36:57 | 404 |    5.947433ms |       127.0.0.1 | GET     | /moderator/                   | Not Found
+20:37:26 | 404 |    4.980803ms |       127.0.0.1 | GET     | /moderator/halcon/init        | Not Found
+20:38:09 | 404 |    4.584065ms |       127.0.0.1 | GET     | /moderator/halcon/init        | Not Found
+20:38:28 | 404 |    6.067338ms |       127.0.0.1 | GET     | /moderator/halcon/init        | Not Found
+20:40:04 | 200 |     303.735µs |       127.0.0.1 | GET     | /                            
+20:40:04 | 303 |     928.088µs |       127.0.0.1 | GET     | /favicon.ico                 
+2026/09/28 20:40:05 views: parsed template: admin/dashboard
+2026/09/28 20:40:05 views: parsed template: admin/halcones/assign
+2026/09/28 20:40:05 views: parsed template: admin/halcones/form
+2026/09/28 20:40:05 views: parsed template: admin/halcones/index
+2026/09/28 20:40:05 views: parsed template: admin/halcones/show
+2026/09/28 20:40:05 views: parsed template: admin/users/form
+2026/09/28 20:40:05 views: parsed template: admin/users/index
+2026/09/28 20:40:05 views: parsed template: auth/login
+2026/09/28 20:40:05 views: parsed template: auth/register
+2026/09/28 20:40:05 views: parsed template: dashboard
+2026/09/28 20:40:05 views: parsed template: layouts/base
+2026/09/28 20:40:05 views: parsed template: layouts/bf-shell
+2026/09/28 20:40:05 views: parsed template: profile/edit
+2026/09/28 20:40:05 views: parsed template: profile/show
+2026/09/28 20:40:05 views: parsed template: tracking/index
+20:40:04 | 200 |    8.468299ms |       127.0.0.1 | GET     | /login                       
+20:40:06 | 200 |     609.419µs |       127.0.0.1 | GET     | /                            
+20:40:06 | 303 |    1.166598ms |       127.0.0.1 | GET     | /favicon.ico                 
+2026/09/28 20:40:06 views: parsed template: admin/dashboard
+2026/09/28 20:40:06 views: parsed template: admin/halcones/assign
+2026/09/28 20:40:06 views: parsed template: admin/halcones/form
+2026/09/28 20:40:06 views: parsed template: admin/halcones/index
+2026/09/28 20:40:06 views: parsed template: admin/halcones/show
+2026/09/28 20:40:06 views: parsed template: admin/users/form
+2026/09/28 20:40:06 views: parsed template: admin/users/index
+2026/09/28 20:40:06 views: parsed template: auth/login
+2026/09/28 20:40:06 views: parsed template: auth/register
+2026/09/28 20:40:06 views: parsed template: dashboard
+2026/09/28 20:40:06 views: parsed template: layouts/base
+2026/09/28 20:40:06 views: parsed template: layouts/bf-shell
+2026/09/28 20:40:06 views: parsed template: profile/edit
+2026/09/28 20:40:06 views: parsed template: profile/show
+2026/09/28 20:40:06 views: parsed template: tracking/index
+20:40:06 | 200 |    8.460312ms |       127.0.0.1 | GET     | /login                       
+20:40:10 | 200 |     437.691µs |       127.0.0.1 | GET     | /                            
+20:40:10 | 303 |     770.227µs |       127.0.0.1 | GET     | /favicon.ico                 
+2026/09/28 20:40:11 views: parsed template: admin/dashboard
+2026/09/28 20:40:11 views: parsed template: admin/halcones/assign
+2026/09/28 20:40:11 views: parsed template: admin/halcones/form
+2026/09/28 20:40:11 views: parsed template: admin/halcones/index
+2026/09/28 20:40:11 views: parsed template: admin/halcones/show
+2026/09/28 20:40:11 views: parsed template: admin/users/form
+2026/09/28 20:40:11 views: parsed template: admin/users/index
+2026/09/28 20:40:11 views: parsed template: auth/login
+2026/09/28 20:40:11 views: parsed template: auth/register
+2026/09/28 20:40:11 views: parsed template: dashboard
+2026/09/28 20:40:11 views: parsed template: halcon
+2026/09/28 20:40:11 views: parsed template: layouts/base
+2026/09/28 20:40:11 views: parsed template: layouts/bf-shell
+2026/09/28 20:40:11 views: parsed template: profile/edit
+2026/09/28 20:40:11 views: parsed template: profile/show
+2026/09/28 20:40:11 views: parsed template: tracking/index
+20:40:10 | 200 |   12.909909ms |       127.0.0.1 | GET     | /login                       
+signal: killed

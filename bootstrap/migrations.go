@@ -7,8 +7,8 @@ import (
 
 func Migrations() []schema.Migration {
 	return []schema.Migration{
-	
-		
 		&migrations.M20260925184109CreateUsersTable{},
+		&migrations.M20260928181557CreateHalconTable{},
+		&migrations.M20260928181643CreateHalconAssignmentTable{},
 	}
 }
