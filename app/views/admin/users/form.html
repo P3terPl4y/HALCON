@@ -20,6 +20,7 @@
       </div>
       <div class="tf-form-section__body">
         <form method="POST" action="{{ if eq .mode "edit" }}/admin/users/{{ .user.ID }}{{ else }}/admin/users{{ end }}">
+        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
           <div class="tf-form-row">
             <div class="tf-col-12">
               <label class="form-label">Nombre completo <span class="req">*</span></label>

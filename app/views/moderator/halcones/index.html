@@ -209,6 +209,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <dialog id="dlg-create-halcon" class="tf-dialog">
   <form method="POST" action="/moderator/halcones" class="tf-dialog__form">
+  	<input type="hidden" name="_csrf" value="{{ .csrfToken }}">
     <header class="tf-dialog__head">
       <div>
         <h2><i class="bi bi-plus-circle"></i> Nuevo halcón</h2>

@@ -20,6 +20,7 @@
       </div>
       <div class="tf-form-section__body">
         <form method="POST" action="/admin/halcones/{{ .halcon.ID }}/assign">
+        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
           <div class="tf-form-row">
             <div class="tf-col-12">
               <label class="form-label">Usuario destino <span class="req">*</span></label>
