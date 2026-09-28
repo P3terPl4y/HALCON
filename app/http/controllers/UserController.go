@@ -7,7 +7,7 @@ import (
 	"goravel/app/models"
 	"goravel/app/requests"
 	"goravel/app/services"
-
+"github.com/gofiber/fiber/v3/middleware/csrf"
 	"github.com/gofiber/fiber/v3"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,7 +43,7 @@ func (c *UserController) Index(ctx fiber.Ctx) error {
 		"users": users,
 		"total": total,
 		"page":  page,
-		"limit": limit,
+		"limit": limit,"csrfToken":    csrf.TokenFromContext(ctx),
 	})
 }
 
@@ -59,7 +59,7 @@ func (c *UserController) Show(ctx fiber.Ctx) error {
 		log.Printf("Error al obtener perfil: %v", err)
 		return ctx.Render("auth/login", fiber.Map{
 			"title":       "Iniciar sesión",
-			"flash_error": "Usuario no encontrado",
+			"flash_error": "Usuario no encontrado","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -74,7 +74,7 @@ func (c *UserController) Show(ctx fiber.Ctx) error {
 	return ctx.Render("profile/show", fiber.Map{
 		"title":    "Mi Perfil",
 		"user":     user,
-		"halcones": halcones,
+		"halcones": halcones,"csrfToken":    csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -90,13 +90,13 @@ func (c *UserController) Edit(ctx fiber.Ctx) error {
 		log.Printf("Error al obtener perfil: %v", err)
 		return ctx.Render("profile/edit", fiber.Map{
 			"title":       "Editar Perfil",
-			"flash_error": "Usuario no encontrado",
+			"flash_error": "Usuario no encontrado","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
 	return ctx.Render("profile/edit", fiber.Map{
 		"title": "Editar Perfil",
-		"user":  user,
+		"user":  user,"csrfToken":    csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -117,7 +117,7 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 		return ctx.Render("profile/edit", fiber.Map{
 			"title":       "Editar Perfil",
 			"flash_error": "Datos inválidos",
-			"user":        user,
+			"user":        user,"csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -136,7 +136,7 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 			return ctx.Render("profile/edit", fiber.Map{
 				"title":       "Editar Perfil",
 				"flash_error": "El email ya está registrado",
-				"user":        user,
+				"user":        user,"csrfToken":    csrf.TokenFromContext(ctx),
 			}, "layouts/base")
 		}
 		updates["email"] = req.Email
@@ -148,7 +148,7 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 			return ctx.Render("profile/edit", fiber.Map{
 				"title":       "Editar Perfil",
 				"flash_error": "Error al procesar la contraseña",
-				"user":        user,
+				"user":        user,"csrfToken":    csrf.TokenFromContext(ctx),
 			}, "layouts/base")
 		}
 		updates["password"] = string(hashed)
@@ -160,7 +160,7 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 			return ctx.Render("profile/edit", fiber.Map{
 				"title":       "Editar Perfil",
 				"flash_error": "Error al actualizar el perfil",
-				"user":        user,
+				"user":        user,"csrfToken":    csrf.TokenFromContext(ctx),
 			}, "layouts/base")
 		}
 	}
