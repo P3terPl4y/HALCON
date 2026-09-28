@@ -8,7 +8,7 @@ import (
 	"goravel/app/requests"
 	"goravel/app/services"
 	"log"
-
+"github.com/gofiber/fiber/v3/middleware/csrf"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
 	"golang.org/x/crypto/bcrypt"
@@ -28,7 +28,7 @@ func NewAuthController() *AuthController {
 func (c *AuthController) ShowRegister(ctx fiber.Ctx) error {
 	facades.Log().Debug("Mostrando formulario de registro")
 	return ctx.Render("auth/register", fiber.Map{
-		"title": "Crear cuenta",
+		"title": "Crear cuenta","csrfToken":    csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -39,7 +39,7 @@ func (c *AuthController) Register(ctx fiber.Ctx) error {
 		facades.Log().Errorf("Error al bindear datos de registro: %v", err)
 		return ctx.Render("auth/register", fiber.Map{
 			"title":       "Crear cuenta",
-			"flash_error": "Datos inválidos",
+			"flash_error": "Datos inválidos","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -53,7 +53,7 @@ func (c *AuthController) Register(ctx fiber.Ctx) error {
 		facades.Log().Errorf("Error al verificar email duplicado: %v", err)
 		return ctx.Render("auth/register", fiber.Map{
 			"title":       "Crear cuenta",
-			"flash_error": "Error al verificar los datos",
+			"flash_error": "Error al verificar los datos","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -61,7 +61,7 @@ func (c *AuthController) Register(ctx fiber.Ctx) error {
 		facades.Log().Warningf("Registro fallido - Email ya registrado: %s", req.Email)
 		return ctx.Render("auth/register", fiber.Map{
 			"title":       "Crear cuenta",
-			"flash_error": "El email ya está registrado",
+			"flash_error": "El email ya está registrado","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -69,7 +69,7 @@ func (c *AuthController) Register(ctx fiber.Ctx) error {
 	if err != nil {
 		facades.Log().Errorf("Error al crear usuario: %v", err)
 		return ctx.Render("auth/register", fiber.Map{
-			"title":       "Crear cuenta",
+			"title":       "Crear cuenta","csrfToken":    csrf.TokenFromContext(ctx),
 			"flash_error": err.Error(),
 		}, "layouts/base")
 	}
@@ -81,7 +81,7 @@ func (c *AuthController) Register(ctx fiber.Ctx) error {
 		facades.Log().Error("session.FromContext devolvió nil en Register")
 		return ctx.Render("auth/register", fiber.Map{
 			"title":       "Crear cuenta",
-			"flash_error": "Error interno al crear la sesión",
+			"flash_error": "Error interno al crear la sesión","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -95,7 +95,7 @@ func (c *AuthController) Register(ctx fiber.Ctx) error {
 func (c *AuthController) ShowLogin(ctx fiber.Ctx) error {
 	facades.Log().Debug("Mostrando formulario de login")
 	return ctx.Render("auth/login", fiber.Map{
-		"title": "Iniciar sesión",
+		"title": "Iniciar sesión","csrfToken":    csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -110,7 +110,7 @@ func (c *AuthController) Login(ctx fiber.Ctx) error {
 		facades.Log().Warning("Login fallido - Email o contraseña vacíos")
 		return ctx.Render("auth/login", fiber.Map{
 			"title":       "Iniciar sesión",
-			"flash_error": "Email y contraseña son obligatorios",
+			"flash_error": "Email y contraseña son obligatorios","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -121,7 +121,7 @@ func (c *AuthController) Login(ctx fiber.Ctx) error {
 		facades.Log().Warningf("Login fallido - Usuario no encontrado: %s", email)
 		return ctx.Render("auth/login", fiber.Map{
 			"title":       "Iniciar sesión",
-			"flash_error": "Credenciales inválidas",
+			"flash_error": "Credenciales inválidas","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -132,7 +132,7 @@ func (c *AuthController) Login(ctx fiber.Ctx) error {
 		facades.Log().Warningf("Login fallido - Contraseña incorrecta para: %s", email)
 		return ctx.Render("auth/login", fiber.Map{
 			"title":       "Iniciar sesión",
-			"flash_error": "Credenciales inválidas",
+			"flash_error": "Credenciales inválidas","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -144,7 +144,7 @@ func (c *AuthController) Login(ctx fiber.Ctx) error {
 		facades.Log().Error("session.FromContext devolvió nil en Login")
 		return ctx.Render("auth/login", fiber.Map{
 			"title":       "Iniciar sesión",
-			"flash_error": "Error interno al crear la sesión",
+			"flash_error": "Error interno al crear la sesión","csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
