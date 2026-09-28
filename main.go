@@ -189,17 +189,27 @@ func main() {
 	}
 
 	app.Use(csrf.New(csrf.Config{
-		CookieName:     csrfCookieName,
-		CookieSecure:   isProd,
-		CookieHTTPOnly: true,
-		CookieSameSite: "Lax",
-		Extractor:      extractors.FromForm("_csrf"),
-		IdleTimeout:    30 * time.Minute,
-		Session:        sessionStore,
-		TrustedOrigins: []string{
-			"https://mariana-flagless-inaudibly.ngrok-free.dev","http://localhost:3300",
-		},
-	}))
+    CookieName:     csrfCookieName,
+    CookieSecure:   isProd,
+    CookieHTTPOnly: true,
+    CookieSameSite: "Lax",
+    Extractor:      extractors.FromForm("_csrf"),
+    IdleTimeout:    30 * time.Minute,
+    Session:        sessionStore,
+    TrustedOrigins: []string{
+        "https://halcon.duohnson.com",                              // ← TU DOMINIO
+        "https://*.duohnson.com",                                    // ← wildcard para subdominios
+        "https://mariana-flagless-inaudibly.ngrok-free.dev",
+        "http://localhost:3300",
+    },
+    // Añade esto para diagnosticar si vuelve a fallar:
+    ErrorHandler: func(c fiber.Ctx, err error) error {
+        log.Printf("❌ CSRF 403: path=%s origin=%s referer=%s scheme=%s host=%s err=%v",
+            c.Path(), c.Get("Origin"), c.Get("Referer"),
+            c.Scheme(), c.Hostname(), err)
+        return fiber.ErrForbidden
+    },
+}))
 
 	// ── 10. Archivos estáticos (por prefijo, no catch-all) ──
 	// Nota: app.Static() fue eliminado en Fiber v3. Ahora es middleware.
