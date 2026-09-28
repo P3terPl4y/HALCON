@@ -90,7 +90,7 @@
     var rootEl = document.getElementById('mapLive');
     if (!rootEl) return;
 
-    var USER_ID = document.getElementById("userID")
+    var USER_ID = document.getElementById("userID").value
     if (!USER_ID) {
       console.error('[ALCON] mapLive: data-user-id vacío o inválido.');
       return;
