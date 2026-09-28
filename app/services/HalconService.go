@@ -17,11 +17,7 @@ import (
 type HalconService struct{}
 // app/services/halcon_service.go (o donde tengas el DTO)
 
-type HalconWithAssignment struct {
-    models.Halcon
-    AssignedUser *models.User `json:"assigned_user,omitempty"`
-    AssignedAt   *time.Time   `json:"assigned_at,omitempty"`
-}
+
 func NewHalconService() *HalconService { return &HalconService{} }
 
 // generateToken crea un token aleatorio de 32 bytes (64 hex chars).
@@ -292,78 +288,171 @@ func (s *HalconService) AdminGetAssignmentsHistory(halconID uint) ([]models.Halc
 		Find(&assignments)
 	return assignments, err
 }
+
+
+// HalconWithAssignment es un DTO que combina un halcón con su asignación activa.
+type HalconWithAssignment struct {
+	models.Halcon
+	AssignedUser *models.User
+	AssignedAt   *time.Time
+}
+
+// ListByModerator devuelve los halcones creados por un moderador (o todos si es admin),
+// con su asignación activa resuelta.
 func (s *HalconService) ListByModerator(
-    moderatorID uint, page, limit int,
-    search, active string, isAdmin bool,
+	moderatorID uint, page, limit int,
+	search, active string, isAdmin bool,
 ) ([]HalconWithAssignment, int64, error) {
-    if page < 1 {
-        page = 1
-    }
-    if limit < 1 || limit > 100 {
-        limit = 20
-    }
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
 
-    // Base query con LEFT JOIN como string
-    baseQuery := facades.Orm().Query().Model(&models.Halcon{}).
-        Join(
-            "LEFT JOIN halcon_assignments ON halcon_assignments.halcon_id = halcones.id " +
-                "AND halcon_assignments.ended_at IS NULL " +
-                "LEFT JOIN users ON users.id = halcon_assignments.user_id",
-        )
+	// ── Paso 1: si no es admin, resolvemos qué halcones ha creado este moderador ──
+	var halconIDs []uint
+	if !isAdmin {
+		type row struct {
+			HalconID uint `db:"halcon_id"`
+		}
+		var rows []row
+		if err := facades.Orm().Query().
+			Table("halcon_assignments").
+			Select("DISTINCT halcon_id").
+			Where("moderator_id = ?", moderatorID).
+			Find(&rows); err != nil {
+			return nil, 0, err
+		}
+		for _, r := range rows {
+			halconIDs = append(halconIDs, r.HalconID)
+		}
+		if len(halconIDs) == 0 {
+			return []HalconWithAssignment{}, 0, nil
+		}
+	}
 
-    if !isAdmin {
-        baseQuery = baseQuery.Where(
-            "halcon_assignments.moderator_id = ?", moderatorID,
-        )
-    }
-    if search != "" {
-        baseQuery = baseQuery.Where("halcones.name LIKE ?", "%"+search+"%")
-    }
-    if active == "1" {
-        baseQuery = baseQuery.Where("halcones.is_active = ?", true)
-    } else if active == "0" {
-        baseQuery = baseQuery.Where("halcones.is_active = ?", false)
-    }
+	// ── Paso 2: query de halcones con filtros ──
+	q := facades.Orm().Query().Model(&models.Halcon{})
 
-    // Contar con la misma query (sin select)
-    total, err := baseQuery.Count()
-    if err != nil {
-        return nil, 0, err
-    }
+	if !isAdmin {
+		q = q.Where("id IN ?", halconIDs)
+	}
+	if search != "" {
+		q = q.Where("name LIKE ?", "%"+search+"%")
+	}
+	if active == "1" {
+		q = q.Where("is_active = ?", true)
+	} else if active == "0" {
+		q = q.Where("is_active = ?", false)
+	}
 
-    // Cargar halcones
-    var halcones []models.Halcon
-    if err := baseQuery.
-        Select("halcones.*").
-        Offset((page - 1) * limit).
-        Limit(limit).
-        Order("halcones.id DESC").
-        Find(&halcones); err != nil {
-        return nil, 0, err
-    }
+	total, err := q.Count()
+	if err != nil {
+		return nil, 0, err
+	}
 
-    // Resolver el usuario asignado (N+1 controlado)
-    result := make([]HalconWithAssignment, 0, len(halcones))
-    for _, h := range halcones {
-        item := HalconWithAssignment{Halcon: h}
+	var halcones []models.Halcon
+	if err := q.Order("id DESC").
+		Offset((page - 1) * limit).
+		Limit(limit).
+		Find(&halcones); err != nil {
+		return nil, 0, err
+	}
 
-        var a models.HalconAssignment
-        if err := facades.Orm().Query().
-            Where("halcon_id = ?", h.ID).
-            Where("ended_at IS NULL").
-            Order("assigned_at DESC").
-            First(&a); err == nil {
+	// ── Paso 3: resolver usuario asignado por cada halcón ──
+	result := make([]HalconWithAssignment, 0, len(halcones))
+	for _, h := range halcones {
+		item := HalconWithAssignment{Halcon: h}
 
-            var u models.User
-            if err := facades.Orm().Query().
-                Where("id = ?", a.UserID).
-                First(&u); err == nil {
-                item.AssignedUser = &u
-                item.AssignedAt = &a.AssignedAt
-            }
-        }
-        result = append(result, item)
-    }
+		var a models.HalconAssignment
+		if err := facades.Orm().Query().
+			Where("halcon_id = ?", h.ID).
+			Where("ended_at IS NULL").
+			Order("assigned_at DESC").
+			First(&a); err != nil {
+			result = append(result, item)
+			continue
+		}
 
-    return result, total, nil
+		var u models.User
+		if err := facades.Orm().Query().
+			Where("id = ?", a.UserID).
+			First(&u); err == nil {
+			item.AssignedUser = &u
+			assignedAt := a.AssignedAt
+			item.AssignedAt = &assignedAt
+		}
+		result = append(result, item)
+	}
+
+	return result, total, nil
+}
+
+// StatsByModerator devuelve estadísticas de halcones creados por un moderador.
+func (s *HalconService) StatsByModerator(moderatorID uint, isAdmin bool) (map[string]int64, error) {
+	stats := map[string]int64{
+		"total":    0,
+		"active":   0,
+		"assigned": 0,
+	}
+
+	// Si no es admin, primero resolvemos los IDs de halcones que creó
+	var halconIDs []uint
+	if !isAdmin {
+		type row struct {
+			HalconID uint `db:"halcon_id"`
+		}
+		var rows []row
+		if err := facades.Orm().Query().
+			Table("halcon_assignments").
+			Select("DISTINCT halcon_id").
+			Where("moderator_id = ?", moderatorID).
+			Find(&rows); err != nil {
+			return stats, err
+		}
+		for _, r := range rows {
+			halconIDs = append(halconIDs, r.HalconID)
+		}
+		if len(halconIDs) == 0 {
+			return stats, nil
+		}
+	}
+
+	// Total
+	q := facades.Orm().Query().Model(&models.Halcon{})
+	if !isAdmin {
+		q = q.Where("id IN ?", halconIDs)
+	}
+	total, err := q.Count()
+	if err != nil {
+		return stats, err
+	}
+	stats["total"] = total
+
+	// Activos
+	q2 := facades.Orm().Query().Model(&models.Halcon{}).Where("is_active = ?", true)
+	if !isAdmin {
+		q2 = q2.Where("id IN ?", halconIDs)
+	}
+	active, err := q2.Count()
+	if err != nil {
+		return stats, err
+	}
+	stats["active"] = active
+
+	// Asignados (con asignación activa)
+	q3 := facades.Orm().Query().
+		Model(&models.HalconAssignment{}).
+		Where("ended_at IS NULL")
+	if !isAdmin {
+		q3 = q3.Where("moderator_id = ?", moderatorID)
+	}
+	assigned, err := q3.Count()
+	if err != nil {
+		return stats, err
+	}
+	stats["assigned"] = assigned
+
+	return stats, nil
 }
