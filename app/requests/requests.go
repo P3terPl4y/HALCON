@@ -16,6 +16,7 @@ type UserUpdateRequest struct {
 
 
 type CreateHalconRequest struct {
+	ModeratorID uint `json:"moderator_id"`
 	Name string `json:"name" validate:"required,min=2,max=100"`
 }
 

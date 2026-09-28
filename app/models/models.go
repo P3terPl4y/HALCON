@@ -27,6 +27,7 @@ func (User) TableName() string { return "users" }
 type Halcon struct {
 	orm.Model
 	Name     string     `gorm:"not null"`
+	ModeratorID uint `gorm:"not null;index"`
 	Token    string     `gorm:"uniqueIndex;not null"`
 	IsActive bool       `gorm:"default:false"`
 	LastLat  float64    `gorm:"type:decimal(10,7)"`

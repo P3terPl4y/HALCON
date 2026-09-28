@@ -38,6 +38,7 @@ func (s *HalconService) Create(req *requests.CreateHalconRequest) (*models.Halco
 
 	halcon := models.Halcon{
 		Name:     req.Name,
+		ModeratorID, req.ModeratorID
 		Token:    token,
 		IsActive: false,
 	}
