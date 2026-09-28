@@ -1,4 +1,4 @@
-{{ define "profile/show" }}
+
 <link rel="stylesheet" href="/css/profile-map.css">
 
 <div class="bf-main__header">
@@ -21,7 +21,7 @@
     <div class="tf-map-live__user">
       <span class="tf-map-live__avatar"><i class="bi bi-person-fill"></i></span>
       <div>
-        <strong id="userID" value="{{.user.ID}}">ID {{.user.ID}}</strong>
+        <strong>ID {{.user.ID}}</strong>
         <strong>{{ .user.Name }}</strong>
         <small>{{ .user.Email }}</small>
       </div>
@@ -90,7 +90,7 @@
     var rootEl = document.getElementById('mapLive');
     if (!rootEl) return;
 
-    var USER_ID = document.getElementById("userID").value
+    var USER_ID = parseInt(rootEl.dataset.userId, 10) || 0;
     if (!USER_ID) {
       console.error('[ALCON] mapLive: data-user-id vacío o inválido.');
       return;
@@ -491,4 +491,4 @@
     boot();
   });
 </script>
-{{ end }}
+
