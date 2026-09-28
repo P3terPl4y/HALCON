@@ -14,10 +14,9 @@ type UserUpdateRequest struct {
 	Password string `json:"password"`
 }
 
-
 type CreateHalconRequest struct {
-	ModeratorID uint `json:"moderator_id"`
-	Name string `json:"name" validate:"required,min=2,max=100"`
+	Name        string `json:"name" validate:"required,min=2,max=100"`
+	ModeratorID uint   `json:"-"`   // ← se rellena desde el controller, no desde el form
 }
 
 type UpdateHalconRequest struct {

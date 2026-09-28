@@ -297,9 +297,6 @@ type HalconWithAssignment struct {
 	AssignedUser *models.User
 	AssignedAt   *time.Time
 }
-
-// ListByModerator devuelve los halcones creados por un moderador (o todos si es admin),
-// con su asignación activa resuelta.
 func (s *HalconService) ListByModerator(
 	moderatorID uint, page, limit int,
 	search, active string, isAdmin bool,
@@ -311,33 +308,11 @@ func (s *HalconService) ListByModerator(
 		limit = 20
 	}
 
-	// ── Paso 1: si no es admin, resolvemos qué halcones ha creado este moderador ──
-	var halconIDs []uint
-	if !isAdmin {
-		type row struct {
-			HalconID uint `db:"halcon_id"`
-		}
-		var rows []row
-		if err := facades.Orm().Query().
-			Table("halcon_assignments").
-			Select("DISTINCT halcon_id").
-			Where("moderator_id = ?", moderatorID).
-			Find(&rows); err != nil {
-			return nil, 0, err
-		}
-		for _, r := range rows {
-			halconIDs = append(halconIDs, r.HalconID)
-		}
-		if len(halconIDs) == 0 {
-			return []HalconWithAssignment{}, 0, nil
-		}
-	}
-
-	// ── Paso 2: query de halcones con filtros ──
 	q := facades.Orm().Query().Model(&models.Halcon{})
 
+	// Filtramos por creador (moderator_id) — no por asignación
 	if !isAdmin {
-		q = q.Where("id IN ?", halconIDs)
+		q = q.Where("moderator_id = ?", moderatorID)
 	}
 	if search != "" {
 		q = q.Where("name LIKE ?", "%"+search+"%")
@@ -361,7 +336,6 @@ func (s *HalconService) ListByModerator(
 		return nil, 0, err
 	}
 
-	// ── Paso 3: resolver usuario asignado por cada halcón ──
 	result := make([]HalconWithAssignment, 0, len(halcones))
 	for _, h := range halcones {
 		item := HalconWithAssignment{Halcon: h}
@@ -390,66 +364,57 @@ func (s *HalconService) ListByModerator(
 	return result, total, nil
 }
 
-// StatsByModerator devuelve estadísticas de halcones creados por un moderador.
 func (s *HalconService) StatsByModerator(moderatorID uint, isAdmin bool) (map[string]int64, error) {
-	stats := map[string]int64{
-		"total":    0,
-		"active":   0,
-		"assigned": 0,
+	stats := map[string]int64{"total": 0, "active": 0, "assigned": 0}
+
+	base := facades.Orm().Query().Model(&models.Halcon{})
+	if !isAdmin {
+		base = base.Where("moderator_id = ?", moderatorID)
 	}
 
-	// Si no es admin, primero resolvemos los IDs de halcones que creó
-	var halconIDs []uint
-	if !isAdmin {
-		type row struct {
-			HalconID uint `db:"halcon_id"`
-		}
-		var rows []row
-		if err := facades.Orm().Query().
-			Table("halcon_assignments").
-			Select("DISTINCT halcon_id").
-			Where("moderator_id = ?", moderatorID).
-			Find(&rows); err != nil {
-			return stats, err
-		}
-		for _, r := range rows {
-			halconIDs = append(halconIDs, r.HalconID)
-		}
-		if len(halconIDs) == 0 {
-			return stats, nil
-		}
-	}
-
-	// Total
-	q := facades.Orm().Query().Model(&models.Halcon{})
-	if !isAdmin {
-		q = q.Where("id IN ?", halconIDs)
-	}
-	total, err := q.Count()
+	total, err := base.Count()
 	if err != nil {
 		return stats, err
 	}
 	stats["total"] = total
 
-	// Activos
-	q2 := facades.Orm().Query().Model(&models.Halcon{}).Where("is_active = ?", true)
+	activeQ := facades.Orm().Query().Model(&models.Halcon{}).Where("is_active = ?", true)
 	if !isAdmin {
-		q2 = q2.Where("id IN ?", halconIDs)
+		activeQ = activeQ.Where("moderator_id = ?", moderatorID)
 	}
-	active, err := q2.Count()
+	active, err := activeQ.Count()
 	if err != nil {
 		return stats, err
 	}
 	stats["active"] = active
 
-	// Asignados (con asignación activa)
-	q3 := facades.Orm().Query().
+	// Asignados: asignaciones activas de halcones creados por este moderador
+	assignedQ := facades.Orm().Query().
 		Model(&models.HalconAssignment{}).
 		Where("ended_at IS NULL")
+
 	if !isAdmin {
-		q3 = q3.Where("moderator_id = ?", moderatorID)
+		type idRow struct {
+			ID uint `db:"id"`
+		}
+		var ids []idRow
+		if err := facades.Orm().Query().
+			Table("halcones").
+			Select("id").
+			Where("moderator_id = ?", moderatorID).
+			Find(&ids); err == nil {
+			var idList []uint
+			for _, r := range ids {
+				idList = append(idList, r.ID)
+			}
+			if len(idList) == 0 {
+				return stats, nil
+			}
+			assignedQ = assignedQ.Where("halcon_id IN ?", idList)
+		}
 	}
-	assigned, err := q3.Count()
+
+	assigned, err := assignedQ.Count()
 	if err != nil {
 		return stats, err
 	}
