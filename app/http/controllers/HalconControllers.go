@@ -25,7 +25,7 @@ func NewHalconController() *HalconController {
 
 func (c *HalconController) Index(ctx fiber.Ctx) error {
 	sess:=session.FormContext(ctx)
-    moderatorID, _ := sess.Get("user_id")
+    moderatorID, err := sess.Get("user_id").(uint)
     role, _ := ctx.Locals("role").(string)
 
     page := atoiDefault(ctx.Query("page"), 1)
