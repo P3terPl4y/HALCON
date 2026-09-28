@@ -60,6 +60,7 @@ func (c *HalconController) Index(ctx fiber.Ctx) error {
 
     return ctx.Render("moderator/halcones/index", fiber.Map{
         "title":      "Mis halcones",
+        "moderator_id":moderatorID,
         "halcones":   halcones,   // []HalconWithAssignment
         "users":      users,      // []models.User
         "stats":      stats,      // map[string]int64{"total", "active", "assigned"}
