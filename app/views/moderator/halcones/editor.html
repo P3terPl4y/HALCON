@@ -1,4 +1,4 @@
-{{ define "moderator/halcones/editor" }}
+
 <link rel="stylesheet" href="/css/moderator-editor.css">
 
 <div class="tf-page-header">
@@ -31,7 +31,6 @@
 </div>
 {{ end }}
 
-<!-- Contenedor principal con data attributes para el JS -->
 <div class="tf-editor"
      id="editorRoot"
      data-halcon-id="{{ .halcon.ID }}"
@@ -39,7 +38,7 @@
      data-token="{{ .halcon.Token }}"
      data-has-assignment="{{ if .hasAssignment }}1{{ else }}0{{ end }}">
 
-  <!-- ── Bloque: Identidad del halcón ── -->
+  <!-- ── Identidad del halcón ── -->
   <section class="tf-form-block" data-block="identity" style="margin-bottom:1.25rem;">
     <header class="tf-form-block__head">
       <i class="bi bi-tag-fill tf-form-block__icon"></i>
@@ -90,10 +89,9 @@
     </div>
   </section>
 
-  <!-- ── Layout: controles + log ── -->
   <div class="tf-editor__grid">
 
-    <!-- Columna izquierda: controles -->
+    <!-- ── Columna izquierda: controles ── -->
     <div class="tf-editor__controls">
 
       <!-- Conexión -->
@@ -135,7 +133,48 @@
           </div>
         </header>
         <div class="tf-form-block__body">
-          <div class="tf-form-row">
+
+          <!-- Selector de modo -->
+          <div class="tf-mode-selector" role="tablist" aria-label="Modo de captura">
+            <button type="button"
+                    class="tf-mode-btn is-active"
+                    data-mode="gps"
+                    role="tab"
+                    aria-selected="true">
+              <i class="bi bi-broadcast"></i>
+              <span>GPS real</span>
+            </button>
+            <button type="button"
+                    class="tf-mode-btn"
+                    data-mode="manual"
+                    role="tab"
+                    aria-selected="false">
+              <i class="bi bi-pencil"></i>
+              <span>Manual</span>
+            </button>
+          </div>
+
+          <!-- Panel de estado GPS (visible en modo GPS) -->
+          <div class="tf-gps-panel" id="gpsPanel">
+            <div class="tf-gps-status" id="gpsStatus">
+              <span class="tf-gps-status__dot"></span>
+              <span class="tf-gps-status__text" id="gpsStatusText">Sin iniciar</span>
+              <span class="tf-gps-status__accuracy" id="gpsAccuracy"></span>
+            </div>
+
+            <button type="button" id="btnToggleGps" class="btn btn-outline-primary tf-w-full">
+              <i class="bi bi-geo-alt"></i>
+              <span id="btnToggleGpsLabel">Activar GPS</span>
+            </button>
+
+            <p class="tf-gps-note" id="gpsNote">
+              El navegador pedirá permiso para acceder a tu ubicación.
+              La precisión depende del dispositivo (GPS del móvil vs WiFi del escritorio).
+            </p>
+          </div>
+
+          <!-- Inputs de coordenadas -->
+          <div class="tf-form-row" style="margin-top:1rem;">
             <div class="tf-col-6 tf-field">
               <label class="form-label">Latitud</label>
               <input type="number" id="inputLat" class="form-control"
@@ -148,6 +187,7 @@
             </div>
           </div>
 
+          <!-- Acciones de envío -->
           <div class="tf-editor__buttons" style="margin-top:1rem;">
             <button type="button" id="btnSend" class="btn btn-primary tf-w-full" disabled>
               <i class="bi bi-send-fill"></i> Enviar una coordenada
@@ -159,14 +199,16 @@
               <i class="bi bi-stop-fill"></i> Detener stream
             </button>
           </div>
+
         </div>
       </section>
 
     </div>
 
-    <!-- Columna derecha: log -->
+    <!-- ── Columna derecha: log ── -->
     <div class="tf-editor__log">
-      <section class="tf-form-block tf-form-block--last" data-block="log" style="height:100%;display:flex;flex-direction:column;">
+      <section class="tf-form-block tf-form-block--last" data-block="log"
+               style="height:100%;display:flex;flex-direction:column;">
         <header class="tf-form-block__head">
           <i class="bi bi-terminal-fill tf-form-block__icon"></i>
           <div class="tf-form-block__text">
@@ -181,7 +223,7 @@
           <div id="logContainer" class="tf-log">
             <div class="tf-log__empty" id="logEmpty">
               <i class="bi bi-terminal"></i>
-              <p>Aún no hay eventos.<br>Conecta el halcón para empezar.</p>
+              <p>Aún no hay eventos.<br>Activa el GPS y conecta el halcón para empezar.</p>
             </div>
           </div>
         </div>
@@ -204,55 +246,60 @@
   var TOKEN          = root.dataset.token || '';
   var HAS_ASSIGNMENT = root.dataset.hasAssignment === '1';
 
-  var ws = null;
-  var streamTimer = null;
+  /* ──────── Estado ──────── */
+  var ws            = null;
+  var streamTimer   = null;
+  var captureMode   = 'gps';     // 'gps' | 'manual'
+  var gpsWatchId    = null;
+  var lastPosition  = null;      // { lat, lng, accuracy, timestamp }
+  var lastSentAt    = 0;
+  var MIN_SEND_INTERVAL_MS = 900; // evita doble envío si el watchPosition dispara rápido
 
   var els = {
-    // token
-    tokenField:   document.getElementById('tokenField'),
-    tokenToggle:  document.getElementById('tokenToggle'),
-    // status
-    connStatus:   document.getElementById('connStatus'),
-    connStatusText: document.getElementById('connStatusText'),
-    // botones
-    btnConnect:   document.getElementById('btnConnect'),
-    btnDisconnect:document.getElementById('btnDisconnect'),
-    btnSend:      document.getElementById('btnSend'),
-    btnStream:    document.getElementById('btnStream'),
-    btnStop:      document.getElementById('btnStop'),
-    btnClearLog:  document.getElementById('btnClearLog'),
-    // inputs
-    inputLat:     document.getElementById('inputLat'),
-    inputLng:     document.getElementById('inputLng'),
-    // log
-    logContainer: document.getElementById('logContainer'),
-    logEmpty:     document.getElementById('logEmpty')
+    tokenField:      document.getElementById('tokenField'),
+    tokenToggle:     document.getElementById('tokenToggle'),
+
+    connStatus:      document.getElementById('connStatus'),
+    connStatusText:  document.getElementById('connStatusText'),
+
+    btnConnect:      document.getElementById('btnConnect'),
+    btnDisconnect:   document.getElementById('btnDisconnect'),
+    btnSend:         document.getElementById('btnSend'),
+    btnStream:       document.getElementById('btnStream'),
+    btnStop:         document.getElementById('btnStop'),
+    btnClearLog:     document.getElementById('btnClearLog'),
+
+    inputLat:        document.getElementById('inputLat'),
+    inputLng:        document.getElementById('inputLng'),
+
+    gpsPanel:        document.getElementById('gpsPanel'),
+    gpsStatus:       document.getElementById('gpsStatus'),
+    gpsStatusText:   document.getElementById('gpsStatusText'),
+    gpsAccuracy:     document.getElementById('gpsAccuracy'),
+    gpsNote:         document.getElementById('gpsNote'),
+    btnToggleGps:    document.getElementById('btnToggleGps'),
+    btnToggleGpsLbl: document.getElementById('btnToggleGpsLabel'),
+
+    logContainer:    document.getElementById('logContainer'),
+    logEmpty:        document.getElementById('logEmpty')
   };
 
-  /* ──────── Construcción de la URL ──────── */
+  /* ──────── URL del WebSocket ──────── */
   function buildWsUrl() {
     var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     return proto + '//' + location.host +
            '/halcon/' + USER_ID + '/' + HALCON_ID + '/?token=' + encodeURIComponent(TOKEN);
   }
 
-  /* ──────── Log helpers ──────── */
+  /* ──────── Log ──────── */
   function log(kind, msg) {
-    if (els.logEmpty) {
-      els.logEmpty.style.display = 'none';
-    }
+    if (els.logEmpty) els.logEmpty.style.display = 'none';
 
     var t = new Date().toLocaleTimeString();
     var line = document.createElement('div');
     line.className = 'tf-log__line tf-log__line--' + kind;
 
-    var icons = {
-      info: '·',
-      ok:   '✓',
-      err:  '✗',
-      send: '↑',
-      recv: '↓'
-    };
+    var icons = { info: '·', ok: '✓', err: '✗', send: '↑', recv: '↓' };
 
     line.innerHTML =
       '<span class="tf-log__time">' + t + '</span>' +
@@ -289,6 +336,156 @@
     }
   }
 
+  /* ============================================================
+     GPS — watchPosition con alta precisión
+     ============================================================ */
+  function setGpsStatus(text, kind, accuracy) {
+    els.gpsStatusText.textContent = text;
+    els.gpsStatus.className = 'tf-gps-status' + (kind ? ' is-' + kind : '');
+    els.gpsAccuracy.textContent = accuracy || '';
+  }
+
+  function gpsErrorMessage(code) {
+    switch (code) {
+      case 1: return 'Permiso denegado';
+      case 2: return 'Posición no disponible';
+      case 3: return 'Timeout de GPS';
+      default: return 'Error de GPS';
+    }
+  }
+
+  function startGps() {
+    if (!navigator.geolocation) {
+      log('err', 'Este navegador no soporta geolocalización');
+      setGpsStatus('No soportado', 'off');
+      els.gpsNote.textContent =
+        'Tu navegador no soporta la API de geolocalización. Usa modo Manual.';
+      return;
+    }
+
+    if (gpsWatchId !== null) return; // ya activo
+
+    log('info', 'Solicitando permiso de ubicación…');
+    setGpsStatus('Solicitando permiso…', 'idle');
+    els.btnToggleGps.disabled = true;
+    els.btnToggleGpsLbl.textContent = 'Solicitando…';
+
+    gpsWatchId = navigator.geolocation.watchPosition(
+      function onPosition(pos) {
+        var lat  = pos.coords.latitude;
+        var lng  = pos.coords.longitude;
+        var acc  = pos.coords.accuracy;      // metros
+        var head = pos.coords.heading;       // grados o null
+
+        lastPosition = {
+          lat: lat,
+          lng: lng,
+          accuracy: acc,
+          heading: head,
+          timestamp: pos.timestamp
+        };
+
+        // En modo GPS los inputs son de solo lectura y muestran la posición real
+        if (captureMode === 'gps') {
+          els.inputLat.value = lat.toFixed(7);
+          els.inputLng.value = lng.toFixed(7);
+        }
+
+        var accText = acc ? '±' + Math.round(acc) + ' m' : '';
+        setGpsStatus('GPS activo', 'live', accText);
+
+        els.btnToggleGps.disabled = false;
+        els.btnToggleGpsLbl.textContent = 'Desactivar GPS';
+
+        // Solo logueamos la primera posición y luego cada ~10s para no saturar
+        if (!lastPosition.__logged || Date.now() - lastPosition.__logged > 10000) {
+          log('ok', 'GPS: ' + lat.toFixed(5) + ', ' + lng.toFixed(5) +
+                    (accText ? ' (' + accText + ')' : ''));
+          lastPosition.__logged = Date.now();
+        }
+      },
+      function onError(err) {
+        var msg = gpsErrorMessage(err.code);
+        log('err', 'GPS: ' + msg + (err.message ? ' · ' + err.message : ''));
+        setGpsStatus(msg, 'off');
+
+        // Si es permiso denegado, no reintentamos: el usuario debe cambiar en el navegador
+        if (err.code === 1) {
+          els.gpsNote.textContent =
+            'Permiso denegado. Habilita la ubicación en los permisos del navegador para este sitio. ' +
+            'Mientras tanto puedes usar el modo Manual.';
+        }
+
+        // Liberamos el watch para permitir un nuevo intento
+        if (gpsWatchId !== null) {
+          navigator.geolocation.clearWatch(gpsWatchId);
+          gpsWatchId = null;
+        }
+        els.btnToggleGps.disabled = false;
+        els.btnToggleGpsLbl.textContent = 'Activar GPS';
+      },
+      {
+        enableHighAccuracy: true,   // ← priorizar el chip GPS sobre WiFi/IP
+        maximumAge: 0,              // ← no reutilizar lecturas cacheadas
+        timeout: 15000              // ← hasta 15s para obtener el primer fix
+      }
+    );
+  }
+
+  function stopGps() {
+    if (gpsWatchId !== null) {
+      navigator.geolocation.clearWatch(gpsWatchId);
+      gpsWatchId = null;
+    }
+    setGpsStatus('GPS desactivado', '');
+    els.btnToggleGpsLbl.textContent = 'Activar GPS';
+    els.btnToggleGps.disabled = false;
+    log('info', 'GPS desactivado');
+  }
+
+  function toggleGps() {
+    if (gpsWatchId === null) {
+      startGps();
+    } else {
+      stopGps();
+    }
+  }
+
+  /* ──────── Modo de captura ──────── */
+  function setCaptureMode(mode) {
+    if (mode !== 'gps' && mode !== 'manual') return;
+    captureMode = mode;
+
+    document.querySelectorAll('.tf-mode-btn').forEach(function (btn) {
+      var active = btn.dataset.mode === mode;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    if (mode === 'gps') {
+      els.gpsPanel.style.display = '';
+      els.inputLat.readOnly = true;
+      els.inputLng.readOnly = true;
+      els.inputLat.classList.add('tf-input-readonly');
+      els.inputLng.classList.add('tf-input-readonly');
+      // Si ya hay última posición, la mostramos de inmediato
+      if (lastPosition) {
+        els.inputLat.value = lastPosition.lat.toFixed(7);
+        els.inputLng.value = lastPosition.lng.toFixed(7);
+      }
+    } else {
+      els.gpsPanel.style.display = 'none';
+      els.inputLat.readOnly = false;
+      els.inputLng.readOnly = false;
+      els.inputLat.classList.remove('tf-input-readonly');
+      els.inputLng.classList.remove('tf-input-readonly');
+      // Si el GPS sigue activo, lo paramos para liberar el chip
+      if (gpsWatchId !== null) stopGps();
+    }
+
+    log('info', 'Modo de captura: ' + (mode === 'gps' ? 'GPS real' : 'Manual'));
+  }
+
   /* ──────── Conexión WebSocket ──────── */
   function connect() {
     if (!HAS_ASSIGNMENT) {
@@ -305,7 +502,6 @@
 
     try {
       ws = new WebSocket(url);
-      console.log(url)
     } catch (e) {
       log('err', 'Error al crear WebSocket: ' + e.message);
       setConnStatus('Error', 'off');
@@ -344,23 +540,44 @@
   }
 
   /* ──────── Envío de coordenadas ──────── */
+  function getCurrentCoords() {
+    if (captureMode === 'gps') {
+      if (!lastPosition) return null;
+      return { lat: lastPosition.lat, lng: lastPosition.lng };
+    }
+    var lat = parseFloat(els.inputLat.value);
+    var lng = parseFloat(els.inputLng.value);
+    if (isNaN(lat) || isNaN(lng)) return null;
+    return { lat: lat, lng: lng };
+  }
+
   function sendCoord() {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       log('err', 'No hay conexión activa');
       return;
     }
 
-    var lat = parseFloat(els.inputLat.value);
-    var lng = parseFloat(els.inputLng.value);
+    var coords = getCurrentCoords();
+    if (!coords) {
+      log('err', captureMode === 'gps'
+        ? 'Sin posición GPS. Activa el GPS y espera la primera lectura.'
+        : 'Coordenadas inválidas');
+      return;
+    }
 
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    if (coords.lat < -90 || coords.lat > 90 || coords.lng < -180 || coords.lng > 180) {
       log('err', 'Coordenadas fuera de rango');
       return;
     }
 
-    var payload = JSON.stringify({ latitude: lat, longitude: lng });
+    // Throttle: si el watchPosition dispara más rápido que el stream, evitamos spam
+    var now = Date.now();
+    if (streamTimer && now - lastSentAt < MIN_SEND_INTERVAL_MS) return;
+    lastSentAt = now;
+
+    var payload = JSON.stringify({ latitude: coords.lat, longitude: coords.lng });
     ws.send(payload);
-    log('send', lat.toFixed(5) + ', ' + lng.toFixed(5));
+    log('send', coords.lat.toFixed(5) + ', ' + coords.lng.toFixed(5));
   }
 
   function startStream() {
@@ -401,10 +618,26 @@
   els.btnStop.addEventListener('click', stopStream);
   els.btnClearLog.addEventListener('click', clearLog);
   els.tokenToggle.addEventListener('click', toggleToken);
+  els.btnToggleGps.addEventListener('click', toggleGps);
+
+  document.querySelectorAll('.tf-mode-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setCaptureMode(btn.dataset.mode);
+    });
+  });
 
   /* Estado inicial */
   setConnectedUI(false);
   setConnStatus('Desconectado', '');
+  setCaptureMode('gps'); // arrancamos en modo GPS
+
+  // Aviso si el contexto no es seguro (geolocation requiere HTTPS o localhost)
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    log('err', 'Geolocalización requiere HTTPS. El navegador bloqueará el acceso al GPS.');
+    els.gpsNote.textContent =
+      'Esta página no está sobre HTTPS. Los navegadores modernos solo permiten ' +
+      'geolocalización en contextos seguros (HTTPS o localhost).';
+  }
 })();
 </script>
-{{ end }}
+

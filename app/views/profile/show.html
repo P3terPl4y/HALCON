@@ -11,17 +11,16 @@
   </a>
 </div>
 
-<!-- Contenedor único: el mapa es el output, el HUD el contexto, la lista el input -->
 <div class="tf-map-live" id="mapLive" data-user-id="{{ .user.ID }}">
 
   <div id="profile-map"></div>
 
-  <!-- HUD superior izquierdo: contexto crítico -->
+  <!-- HUD superior izquierdo -->
   <div class="tf-map-live__hud">
     <div class="tf-map-live__user">
       <span class="tf-map-live__avatar"><i class="bi bi-person-fill"></i></span>
       <div>
-        <strong>ID {{.user.ID}}</strong>
+        <strong>ID {{ .user.ID }}</strong>
         <strong>{{ .user.Name }}</strong>
         <small>{{ .user.Email }}</small>
       </div>
@@ -44,7 +43,19 @@
     </div>
   </div>
 
-  <!-- Lista de halcones: capa de contexto detallado -->
+  <!-- Toolbar de rastro -->
+  <div class="tf-map-live__toolbar" id="trailToolbar">
+    <button type="button" class="tf-trail-btn" id="btnToggleTrail" title="Mostrar u ocultar rastro">
+      <i class="bi bi-eye-fill"></i>
+      <span>Rastro</span>
+    </button>
+    <button type="button" class="tf-trail-btn" id="btnClearAllTrails" title="Borrar todos los rastros">
+      <i class="bi bi-eraser"></i>
+      <span>Limpiar</span>
+    </button>
+  </div>
+
+  <!-- Lista de halcones -->
   <div class="tf-map-live__list" id="halconPanel">
     <header class="tf-map-live__list-head">
       <span><i class="bi bi-broadcast-pin"></i> Halcones asignados</span>
@@ -58,7 +69,7 @@
     </div>
   </div>
 
-  <!-- Overlay de estados vacíos -->
+  <!-- Overlay -->
   <div class="tf-map-live__overlay" id="mapOverlay">
     <div class="tf-map-live__overlay-inner">
       <div class="tf-map-live__overlay-icon"><i class="bi bi-broadcast"></i></div>
@@ -73,9 +84,6 @@
   document.addEventListener('DOMContentLoaded', function () {
     'use strict';
 
-    /* ============================================================
-       Guardas de entorno
-       ============================================================ */
     if (typeof L === 'undefined') {
       console.error('[ALCON] Leaflet no está disponible.');
       var ov = document.getElementById('mapOverlay');
@@ -99,46 +107,71 @@
     /* ============================================================
        Constantes
        ============================================================ */
-    var WS_PATH = '/dashboard/' + USER_ID + '/';
-    var DEFAULT_CENTER = [21.5218, -77.7812];   // Cuba
-    var DEFAULT_ZOOM = 7;
-    var FOCUS_ZOOM = 15;
-    var IDLE_MS = 12000;                 // sin datos → inactivo
-    var RECONNECT_BASE_MS = 1000;                  // backoff exponencial
-    var RECONNECT_MAX_MS = 15000;
-    var AUTO_FIT_PADDING = 60;
+    var WS_PATH              = '/dashboard/' + USER_ID + '/';
+    var DEFAULT_CENTER       = [21.5218, -77.7812];
+    var DEFAULT_ZOOM         = 7;
+    var FOCUS_ZOOM           = 15;
+    var IDLE_MS              = 12000;
+    var RECONNECT_BASE_MS    = 1000;
+    var RECONNECT_MAX_MS     = 15000;
+    var AUTO_FIT_PADDING     = 60;
+
+    /* ── Rastro ── */
+    var TRAIL_STORAGE_KEY      = 'alcon_trails_v1';
+    var TRAIL_MAX_POINTS       = 2000;      // por halcón
+    var TRAIL_SAVE_DEBOUNCE_MS = 2000;      // guarda 2s tras el último punto
+    var TRAIL_MIN_DISTANCE     = 0.000005;  // ~0.5 m de lat/lng; ignora duplicados
+    var TRAIL_COLORS = [
+      '#F59E0B', // ámbar ALCON
+      '#10B981', // verde
+      '#3B82F6', // azul
+      '#8B5CF6', // violeta
+      '#EF4444', // rojo
+      '#06B6D4', // cian
+      '#F97316', // naranja
+      '#EC4899'  // rosa
+    ];
 
     /* ============================================================
-       Estado del cliente
+       Estado
        ============================================================ */
-    var map = null;
-    var markers = {};      // halconId → L.marker
-    var markerData = {};      // halconId → { name, lat, lng, active }
-    var lastSeen = {};      // halconId → timestamp ms
-    var selectedId = null;
-    var ws = null;
-    var reconnectAt = RECONNECT_BASE_MS;
-    var reconnectTo = null;
-    var idleTimer = null;
+    var map          = null;
+    var markers      = {};
+    var markerData   = {};
+    var lastSeen     = {};
+    var selectedId   = null;
+    var ws           = null;
+    var reconnectAt  = RECONNECT_BASE_MS;
+    var reconnectTo  = null;
+    var idleTimer    = null;
+
+    /* Rastro */
+    var trailPoints      = {};   // halconId → [[lat,lng], ...]
+    var trailLayers      = {};   // halconId → L.polyline
+    var trailVisible     = true;
+    var trailSaveTimer   = null;
+    var trailDirty       = false;
 
     /* ============================================================
-       Refs de UI
+       Refs UI
        ============================================================ */
     var ui = {
-      statusBox: document.getElementById('liveStatus'),
+      statusBox:  document.getElementById('liveStatus'),
       statusText: document.getElementById('liveStatusText'),
-      statTotal: document.getElementById('statTotal'),
-      statLive: document.getElementById('statLive'),
-      listEl: document.getElementById('halconList'),
-      listEmpty: document.getElementById('halconListEmpty'),
-      listCount: document.getElementById('listCount'),
-      overlay: document.getElementById('mapOverlay'),
+      statTotal:  document.getElementById('statTotal'),
+      statLive:   document.getElementById('statLive'),
+      listEl:     document.getElementById('halconList'),
+      listEmpty:  document.getElementById('halconListEmpty'),
+      listCount:  document.getElementById('listCount'),
+      overlay:    document.getElementById('mapOverlay'),
       overlayTtl: document.getElementById('overlayTitle'),
-      overlayTxt: document.getElementById('overlayText')
+      overlayTxt: document.getElementById('overlayText'),
+      btnToggle:  document.getElementById('btnToggleTrail'),
+      btnClear:   document.getElementById('btnClearAllTrails')
     };
 
     /* ============================================================
-       Inicialización del mapa
+       Mapa
        ============================================================ */
     function initMap() {
       map = L.map('profile-map', {
@@ -195,13 +228,189 @@
       });
     }
 
+    function trailColor(halconId) {
+      // Color estable por halcón basado en su ID
+      return TRAIL_COLORS[halconId % TRAIL_COLORS.length];
+    }
+
     /* ============================================================
-       Marcadores en el mapa
+       Persistencia del rastro (localStorage)
+       ============================================================ */
+    function loadTrails() {
+      try {
+        var raw = localStorage.getItem(TRAIL_STORAGE_KEY);
+        if (!raw) return;
+        var data = JSON.parse(raw);
+        if (!data || typeof data !== 'object') return;
+
+        Object.keys(data).forEach(function (id) {
+          var entry = data[id];
+          if (!entry || !Array.isArray(entry.points)) return;
+          trailPoints[id] = entry.points;
+        });
+        console.log('[ALCON] Rastros cargados desde localStorage:',
+                    Object.keys(trailPoints).length);
+      } catch (e) {
+        console.warn('[ALCON] No se pudo leer localStorage:', e);
+      }
+    }
+
+    function saveTrails(force) {
+      if (!force && !trailDirty) return;
+      try {
+        // Empaquetamos solo puntos, sin metadatos innecesarios
+        var payload = {};
+        Object.keys(trailPoints).forEach(function (id) {
+          if (trailPoints[id] && trailPoints[id].length > 0) {
+            payload[id] = { points: trailPoints[id] };
+          }
+        });
+        localStorage.setItem(TRAIL_STORAGE_KEY, JSON.stringify(payload));
+        trailDirty = false;
+      } catch (e) {
+        // Cuota excedida: limpiamos los rastros más viejos y reintentamos una vez
+        console.warn('[ALCON] Cuota de localStorage excedida, podando rastros.');
+        Object.keys(trailPoints).forEach(function (id) {
+          if (trailPoints[id].length > 500) {
+            trailPoints[id] = trailPoints[id].slice(-500);
+          }
+        });
+        try {
+          var payload2 = {};
+          Object.keys(trailPoints).forEach(function (id) {
+            if (trailPoints[id] && trailPoints[id].length > 0) {
+              payload2[id] = { points: trailPoints[id] };
+            }
+          });
+          localStorage.setItem(TRAIL_STORAGE_KEY, JSON.stringify(payload2));
+          trailDirty = false;
+        } catch (e2) {
+          console.error('[ALCON] No se pudo guardar tras podar:', e2);
+        }
+      }
+    }
+
+    function scheduleTrailSave() {
+      trailDirty = true;
+      if (trailSaveTimer) clearTimeout(trailSaveTimer);
+      trailSaveTimer = setTimeout(function () {
+        trailSaveTimer = null;
+        saveTrails();
+      }, TRAIL_SAVE_DEBOUNCE_MS);
+    }
+
+    /* ============================================================
+       Rastro en el mapa
+       ============================================================ */
+    function ensureTrailLayer(halconId) {
+      var id = String(halconId);
+      if (trailLayers[id]) return trailLayers[id];
+
+      var points = trailPoints[id] || [];
+      var poly = L.polyline(points, {
+        color: trailColor(Number(id)),
+        weight: 4,
+        opacity: 0.75,
+        lineJoin: 'round',
+        lineCap: 'round',
+        smoothFactor: 1,
+        dashArray: null
+      });
+      if (trailVisible) poly.addTo(map);
+      trailLayers[id] = poly;
+      return poly;
+    }
+
+    function appendTrailPoint(halconId, lat, lng) {
+      var id = String(halconId);
+      var arr = trailPoints[id] || (trailPoints[id] = []);
+
+      // Filtrar puntos casi idénticos (evita arrays gigantes con un halcón estacionario)
+      if (arr.length > 0) {
+        var last = arr[arr.length - 1];
+        var dLat = Math.abs(last[0] - lat);
+        var dLng = Math.abs(last[1] - lng);
+        if (dLat < TRAIL_MIN_DISTANCE && dLng < TRAIL_MIN_DISTANCE) {
+          return; // sin cambio significativo
+        }
+      }
+
+      arr.push([lat, lng]);
+
+      // Poda: mantiene los últimos TRAIL_MAX_POINTS
+      if (arr.length > TRAIL_MAX_POINTS) {
+        arr.splice(0, arr.length - TRAIL_MAX_POINTS);
+      }
+
+      var poly = ensureTrailLayer(id);
+      poly.setLatLngs(arr);
+
+      if (trailVisible && !map.hasLayer(poly)) {
+        poly.addTo(map);
+      }
+
+      scheduleTrailSave();
+    }
+
+    function refreshTrailLayer(halconId) {
+      var id = String(halconId);
+      var arr = trailPoints[id] || [];
+      var poly = ensureTrailLayer(id);
+      poly.setLatLngs(arr);
+      if (trailVisible && arr.length > 0 && !map.hasLayer(poly)) {
+        poly.addTo(map);
+      }
+    }
+
+    function setTrailVisibility(visible) {
+      trailVisible = visible;
+      Object.keys(trailLayers).forEach(function (id) {
+        var poly = trailLayers[id];
+        if (visible) {
+          if (!map.hasLayer(poly) && poly.getLatLngs().length > 0) {
+            poly.addTo(map);
+          }
+        } else {
+          if (map.hasLayer(poly)) {
+            map.removeLayer(poly);
+          }
+        }
+      });
+      updateTrailToggleUI();
+    }
+
+    function clearAllTrails() {
+      if (!confirm('¿Borrar todos los rastros guardados de todos los halcones?')) return;
+
+      // Quitar del mapa
+      Object.keys(trailLayers).forEach(function (id) {
+        var poly = trailLayers[id];
+        if (map.hasLayer(poly)) map.removeLayer(poly);
+        trailLayers[id].setLatLngs([]);
+      });
+
+      // Resetear estado
+      trailPoints = {};
+      trailDirty = true;
+      saveTrails(true);
+      console.log('[ALCON] Rastros eliminados');
+    }
+
+    function updateTrailToggleUI() {
+      if (!ui.btnToggle) return;
+      var icon = ui.btnToggle.querySelector('i');
+      if (icon) {
+        icon.className = trailVisible ? 'bi bi-eye-fill' : 'bi bi-eye-slash-fill';
+      }
+      ui.btnToggle.classList.toggle('is-off', !trailVisible);
+    }
+
+    /* ============================================================
+       Marcadores
        ============================================================ */
     function upsertMarker(id, name, lat, lng, live) {
       var label = escapeHtml(name || ('Halcon #' + id));
       var coords = lat.toFixed(5) + ', ' + lng.toFixed(5);
-
       var popupHtml =
         '<strong>' + label + '</strong>' +
         '<small>Halcon #' + id + '</small>' +
@@ -221,21 +430,6 @@
       lastSeen[id] = Date.now();
     }
 
-    function fitToMarkers() {
-      var ids = Object.keys(markers);
-      if (ids.length === 0) return;
-      if (ids.length === 1) {
-        var m = markers[ids[0]];
-        map.setView(m.getLatLng(), FOCUS_ZOOM, { animate: true });
-        return;
-      }
-      var group = L.featureGroup(ids.map(function (id) { return markers[id]; }));
-      map.fitBounds(group.getBounds(), {
-        padding: [AUTO_FIT_PADDING, AUTO_FIT_PADDING],
-        maxZoom: 16
-      });
-    }
-
     /* ============================================================
        Lista lateral
        ============================================================ */
@@ -251,11 +445,15 @@
       item.innerHTML =
         '<span class="tf-map-live__item-dot"></span>' +
         '<div class="tf-map-live__item-body">' +
-        '<span class="tf-map-live__item-name">' +
-        escapeHtml(name || ('Halcon #' + id)) +
-        '</span>' +
-        '<span class="tf-map-live__item-meta">#' + id + '</span>' +
+          '<span class="tf-map-live__item-name">' +
+            escapeHtml(name || ('Halcon #' + id)) +
+          '</span>' +
+          '<span class="tf-map-live__item-meta">#' + id + '</span>' +
         '</div>' +
+        '<button type="button" class="tf-map-live__item-clear" ' +
+                'data-clear-trail="' + id + '" title="Borrar rastro de este halcón">' +
+          '<i class="bi bi-eraser"></i>' +
+        '</button>' +
         '<i class="bi bi-chevron-right tf-map-live__item-arrow"></i>';
 
       ui.listEl.appendChild(item);
@@ -286,7 +484,29 @@
         var ll = m.getLatLng();
         map.setView(ll, FOCUS_ZOOM, { animate: true });
         m.openPopup();
+      } else if (trailPoints[String(id)] && trailPoints[String(id)].length > 0) {
+        // No hay marcador activo, pero hay rastro → centrar en el rastro
+        var poly = trailLayers[String(id)];
+        if (poly) {
+          map.fitBounds(poly.getBounds(), {
+            padding: [AUTO_FIT_PADDING, AUTO_FIT_PADDING],
+            maxZoom: 16
+          });
+        }
       }
+    }
+
+    function clearTrailFor(halconId) {
+      var id = String(halconId);
+      var poly = trailLayers[id];
+      if (poly) {
+        poly.setLatLngs([]);
+        if (map.hasLayer(poly)) map.removeLayer(poly);
+      }
+      delete trailPoints[id];
+      trailDirty = true;
+      saveTrails(true);
+      console.log('[ALCON] Rastro del halcón', halconId, 'eliminado');
     }
 
     /* ============================================================
@@ -311,14 +531,14 @@
     /* ============================================================
        WebSocket
        ============================================================ */
-   function wsUrl() {
-  var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return proto + '//' + location.host + '/dashboard/' + USER_ID + '/';
-}
+    function wsUrl() {
+      var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return proto + '//' + location.host + '/dashboard/' + USER_ID + '/';
+    }
 
     function connect() {
       if (ws && (ws.readyState === WebSocket.OPEN ||
-        ws.readyState === WebSocket.CONNECTING)) {
+                 ws.readyState === WebSocket.CONNECTING)) {
         return;
       }
 
@@ -351,7 +571,7 @@
         try { m = JSON.parse(ev.data); }
         catch (e) { console.warn('[ALCON] Payload inválido:', ev.data); return; }
 
-        /* --- Estado inicial de un halcón --- */
+        /* Estado inicial de un halcón */
         if (m.type === 'halcon_status') {
           var sid = m.halcon_id;
           if (typeof sid === 'undefined') return;
@@ -365,15 +585,18 @@
             markItemLive(sid, !!m.active);
             hideOverlay();
           }
+
+          // Refrescar el rastro desde cache si existe
+          refreshTrailLayer(sid);
           updateStats();
           return;
         }
 
-        /* --- Coordenada en vivo --- */
+        /* Coordenada en vivo */
         if (typeof m.halcon_id !== 'undefined' &&
-          typeof m.latitude !== 'undefined') {
+            typeof m.latitude !== 'undefined') {
 
-          var hid = m.halcon_id;
+          var hid  = m.halcon_id;
           var hlat = parseFloat(m.latitude);
           var hlng = parseFloat(m.longitude);
           if (isNaN(hlat) || isNaN(hlng)) return;
@@ -383,6 +606,9 @@
           markItemLive(hid, true);
           hideOverlay();
           updateStats();
+
+          // Rastro: solo si el halcón tiene nombre conocido o ya existe entrada
+          appendTrailPoint(hid, hlat, hlng);
 
           if (selectedId === hid) {
             map.setView([hlat, hlng], FOCUS_ZOOM, { animate: true });
@@ -458,10 +684,29 @@
        ============================================================ */
     function bindEvents() {
       ui.listEl.addEventListener('click', function (e) {
+        // Botón de borrar rastro de un halcón
+        var clearBtn = e.target.closest('[data-clear-trail]');
+        if (clearBtn) {
+          e.stopPropagation();
+          var hId = parseInt(clearBtn.dataset.clearTrail, 10);
+          clearTrailFor(hId);
+          return;
+        }
+
         var item = e.target.closest('.tf-map-live__item');
         if (!item) return;
         selectItem(parseInt(item.dataset.id, 10));
       });
+
+      if (ui.btnToggle) {
+        ui.btnToggle.addEventListener('click', function () {
+          setTrailVisibility(!trailVisible);
+        });
+      }
+
+      if (ui.btnClear) {
+        ui.btnClear.addEventListener('click', clearAllTrails);
+      }
 
       window.addEventListener('resize', function () {
         if (map) map.invalidateSize();
@@ -472,6 +717,11 @@
           setTimeout(function () { map.invalidateSize(); }, 100);
         }
       });
+
+      // Guardar rastros al cerrar la pestaña (por si el debounce no llegó)
+      window.addEventListener('beforeunload', function () {
+        if (trailDirty) saveTrails(true);
+      });
     }
 
     /* ============================================================
@@ -479,6 +729,15 @@
        ============================================================ */
     function boot() {
       initMap();
+
+      // Cargar rastros ANTES de suscribirnos al WS para que aparezcan
+      // de inmediato aunque no haya conexión todavía
+      loadTrails();
+      Object.keys(trailPoints).forEach(function (id) {
+        refreshTrailLayer(id);
+      });
+      updateTrailToggleUI();
+
       bindEvents();
       showOverlay('Conectando…', 'Estableciendo conexión con el servidor de tracking.');
       setStatus('Conectando…', 'is-idle');
@@ -491,4 +750,3 @@
     boot();
   });
 </script>
-
