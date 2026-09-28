@@ -164,7 +164,7 @@
                     style="display:inline;margin:0;"
                     onsubmit="return confirm('¿Eliminar el halcón “{{ .Name }}”? Se cerrarán sus asignaciones.');">
                        <input type="hidden" name="halcon_id" value="{{ .ID }}">
-                       	<input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                       	<input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
                 <input type="hidden" name="_method" value="DELETE">
                 <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
                   <i class="bi bi-trash"></i>
@@ -211,7 +211,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <dialog id="dlg-create-halcon" class="tf-dialog">
   <form method="POST" action="/moderator/halcones" class="tf-dialog__form">
-  	<input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+  	<input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
     <header class="tf-dialog__head">
       <div>
         <h2><i class="bi bi-plus-circle"></i> Nuevo halcón</h2>
@@ -268,7 +268,7 @@
 <dialog id="dlg-assign-{{ .ID }}" class="tf-dialog">
   <form method="POST" action="/moderator/halcones/assign" class="tf-dialog__form">
      <input type="hidden" name="halcon_id" value="{{ .ID }}">
-    	<input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+    	<input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
 
     <header class="tf-dialog__head">
       <div>
