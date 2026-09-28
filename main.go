@@ -197,7 +197,7 @@ func main() {
 		IdleTimeout:    30 * time.Minute,
 		Session:        sessionStore,
 		TrustedOrigins: []string{
-			"https://mariana-flagless-inaudibly.ngrok-free.dev",
+			"https://mariana-flagless-inaudibly.ngrok-free.dev","http://localhost:3300",
 		},
 	}))
 
