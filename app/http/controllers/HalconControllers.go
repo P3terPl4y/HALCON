@@ -41,8 +41,12 @@ func (c *HalconController) Index(ctx fiber.Ctx) error {
 
     // Usuarios disponibles para asignar (solo rol "user")
     users, _, _ := c.userService.AdminListUsers(1, 200, "", "user")
-
-    stats, _ := c.halconService.StatsByModerator(moderatorID)
+    
+    isAdmin:=false
+	if role=="admin"{
+		isAdmin=true
+	}
+    stats, _ := c.halconService.StatsByModerator(moderatorID,isAdmin)
 
     totalPages := int((total + int64(limit) - 1) / int64(limit))
     if totalPages < 1 { totalPages = 1 }
