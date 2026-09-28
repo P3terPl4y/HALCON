@@ -3,7 +3,7 @@ package controllers
 import (
 	"strconv"
 	"strings"
-
+"log"
 	"goravel/app/requests"
 	"goravel/app/services"
 
@@ -160,3 +160,46 @@ func (c *HalconController) Destroy(ctx fiber.Ctx) error {
 
 // Evita el import no usado cuando Go no detecta el uso
 var _ = strconv.Itoa
+// Editor - GET /moderator/halcones/:id/editor
+// Muestra la vista de edición/simulación de un halcón propio del moderador.
+func (c *HalconController) Editor(ctx fiber.Ctx) error {
+	id := parseIDParam(ctx.Params("id"))
+	if id == 0 {
+		return ctx.Redirect().To("/moderator/halcones?error=datos_invalidos")
+	}
+
+	moderatorID, _ := ctx.Locals("user_id").(uint)
+	role, _ := ctx.Locals("role").(string)
+	isAdmin := role == "admin"
+
+	halcon, err := c.halconService.GetByID(id)
+	if err != nil {
+		return ctx.Redirect().To("/moderator/halcones?error=no_encontrado")
+	}
+
+	// Verificación de propiedad: el moderador solo puede ver sus propios halcones
+	if !isAdmin && halcon.ModeratorID != moderatorID {
+		log.Printf("moderator %d intentó acceder al halcón %d (dueño: %d)",
+			moderatorID, halcon.ID, halcon.ModeratorID)
+		return ctx.Redirect().To("/moderator/halcones?error=sin_permiso")
+	}
+
+	// Asignación activa (puede no existir)
+	var assignedUserID uint
+	var assignedUserName string
+	if a, err := c.halconService.GetActiveAssignment(id); err == nil {
+		assignedUserID = a.UserID
+		if u, err := c.userService.AdminGetUser(a.UserID); err == nil {
+			assignedUserName = u.Name
+		}
+	}
+
+	return ctx.Render("moderator/halcones/editor", fiber.Map{
+		"title":            "Editar halcón · " + halcon.Name,
+		"csrfToken":        csrf.TokenFromContext(ctx),
+		"halcon":           halcon,
+		"assignedUserID":   assignedUserID,
+		"assignedUserName": assignedUserName,
+		"hasAssignment":    assignedUserID > 0,
+	}, "layouts/base")
+}

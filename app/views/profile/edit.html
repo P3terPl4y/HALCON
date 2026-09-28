@@ -11,6 +11,7 @@
 {{ if .flash_error }}<div class="alert alert-danger">{{ .flash_error }}</div>{{ end }}
 
 <form method="POST" action="/profile/edit" class="tf-form-page">
+   <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
   <div class="tf-form-page__main">
     <div class="tf-form-card">
 

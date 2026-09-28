@@ -1,0 +1,409 @@
+{{ define "moderator/halcones/editor" }}
+<link rel="stylesheet" href="/css/moderator-editor.css">
+
+<div class="tf-page-header">
+  <div>
+    <h1>
+      <i class="bi bi-broadcast-pin"></i>
+      {{ .halcon.Name }}
+      <span class="tf-page-header__id">#{{ .halcon.ID }}</span>
+    </h1>
+    <p>Simulador de coordenadas y monitoreo del dispositivo</p>
+  </div>
+  <a href="/moderator/halcones" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+</div>
+
+{{ if not .hasAssignment }}
+<div class="alert alert-danger tf-mb-4">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <div>
+    <strong>Este halcón no está asignado a ningún usuario</strong>
+    <p style="margin:.25rem 0 0;font-size:.85rem;">
+      Asigna el halcón antes de poder simular coordenadas. El endpoint
+      WebSocket requiere una asignación activa.
+    </p>
+    <a href="/moderator/halcones" class="btn btn-primary btn-sm" style="margin-top:.5rem;">
+      Ir a asignar
+    </a>
+  </div>
+</div>
+{{ end }}
+
+<!-- Contenedor principal con data attributes para el JS -->
+<div class="tf-editor"
+     id="editorRoot"
+     data-halcon-id="{{ .halcon.ID }}"
+     data-user-id="{{ .assignedUserID }}"
+     data-token="{{ .halcon.Token }}"
+     data-has-assignment="{{ if .hasAssignment }}1{{ else }}0{{ end }}">
+
+  <!-- ── Bloque: Identidad del halcón ── -->
+  <section class="tf-form-block" data-block="identity" style="margin-bottom:1.25rem;">
+    <header class="tf-form-block__head">
+      <i class="bi bi-tag-fill tf-form-block__icon"></i>
+      <div class="tf-form-block__text">
+        <h2>Identidad del dispositivo</h2>
+        <p>Datos con los que este halcón se autentica ante el servidor</p>
+      </div>
+    </header>
+    <div class="tf-form-block__body">
+      <div class="tf-form-row">
+        <div class="tf-col-4 tf-field">
+          <label class="form-label">ID del usuario</label>
+          <input type="text" class="form-control tf-input-readonly"
+                 value="{{ if .hasAssignment }}{{ .assignedUserID }}{{ else }}— sin asignar —{{ end }}"
+                 readonly>
+          <span class="tf-field-hint">Usuario al que está asignado este halcón.</span>
+        </div>
+        <div class="tf-col-4 tf-field">
+          <label class="form-label">ID del halcón</label>
+          <input type="text" class="form-control tf-input-readonly"
+                 value="{{ .halcon.ID }}" readonly>
+          <span class="tf-field-hint">Identificador único del dispositivo.</span>
+        </div>
+        <div class="tf-col-4 tf-field">
+          <label class="form-label">Estado</label>
+          <div class="tf-status-badge {{ if .halcon.IsActive }}is-active{{ end }}">
+            <span class="tf-status-badge__dot"></span>
+            <span>{{ if .halcon.IsActive }}En vivo{{ else }}Inactivo{{ end }}</span>
+          </div>
+        </div>
+
+        <div class="tf-col-12 tf-field">
+          <label class="form-label">
+            Token de autenticación
+            <button type="button" class="tf-token-toggle" id="tokenToggle" aria-label="Mostrar u ocultar token">
+              <i class="bi bi-eye"></i>
+            </button>
+          </label>
+          <div class="tf-token-field">
+            <input type="password" id="tokenField" class="form-control tf-input-readonly"
+                   value="{{ .halcon.Token }}" readonly>
+          </div>
+          <span class="tf-field-hint">
+            Token que el dispositivo usa para autenticarse. No lo compartas.
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Layout: controles + log ── -->
+  <div class="tf-editor__grid">
+
+    <!-- Columna izquierda: controles -->
+    <div class="tf-editor__controls">
+
+      <!-- Conexión -->
+      <section class="tf-form-block" data-block="connection">
+        <header class="tf-form-block__head">
+          <i class="bi bi-plug-fill tf-form-block__icon"></i>
+          <div class="tf-form-block__text">
+            <h2>Conexión</h2>
+            <p>Establece el enlace con el servidor de tracking</p>
+          </div>
+        </header>
+        <div class="tf-form-block__body">
+          <div class="tf-conn-status" id="connStatus">
+            <span class="tf-conn-status__dot"></span>
+            <span class="tf-conn-status__text" id="connStatusText">Desconectado</span>
+          </div>
+
+          <div class="tf-editor__buttons">
+            <button type="button" id="btnConnect"
+                    class="btn btn-primary tf-w-full"
+                    {{ if not .hasAssignment }}disabled{{ end }}>
+              <i class="bi bi-plug"></i> Conectar
+            </button>
+            <button type="button" id="btnDisconnect"
+                    class="btn btn-secondary tf-w-full" disabled>
+              <i class="bi bi-x-circle"></i> Desconectar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Coordenadas -->
+      <section class="tf-form-block tf-form-block--last" data-block="coords" style="margin-top:1.25rem;">
+        <header class="tf-form-block__head">
+          <i class="bi bi-geo-alt-fill tf-form-block__icon"></i>
+          <div class="tf-form-block__text">
+            <h2>Coordenadas</h2>
+            <p>Envía posiciones al servidor para simular el GPS</p>
+          </div>
+        </header>
+        <div class="tf-form-block__body">
+          <div class="tf-form-row">
+            <div class="tf-col-6 tf-field">
+              <label class="form-label">Latitud</label>
+              <input type="number" id="inputLat" class="form-control"
+                     step="any" value="23.1136" min="-90" max="90">
+            </div>
+            <div class="tf-col-6 tf-field">
+              <label class="form-label">Longitud</label>
+              <input type="number" id="inputLng" class="form-control"
+                     step="any" value="-82.3666" min="-180" max="180">
+            </div>
+          </div>
+
+          <div class="tf-editor__buttons" style="margin-top:1rem;">
+            <button type="button" id="btnSend" class="btn btn-primary tf-w-full" disabled>
+              <i class="bi bi-send-fill"></i> Enviar una coordenada
+            </button>
+            <button type="button" id="btnStream" class="btn btn-outline-primary tf-w-full" disabled>
+              <i class="bi bi-play-fill"></i> Iniciar stream (1/s)
+            </button>
+            <button type="button" id="btnStop" class="btn btn-danger tf-w-full" style="display:none;">
+              <i class="bi bi-stop-fill"></i> Detener stream
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Columna derecha: log -->
+    <div class="tf-editor__log">
+      <section class="tf-form-block tf-form-block--last" data-block="log" style="height:100%;display:flex;flex-direction:column;">
+        <header class="tf-form-block__head">
+          <i class="bi bi-terminal-fill tf-form-block__icon"></i>
+          <div class="tf-form-block__text">
+            <h2>Log de eventos</h2>
+            <p>Trazabilidad de la sesión actual</p>
+          </div>
+          <button type="button" id="btnClearLog" class="btn btn-outline-secondary btn-sm" style="margin-left:auto;">
+            <i class="bi bi-trash"></i> Limpiar
+          </button>
+        </header>
+        <div class="tf-form-block__body" style="flex:1;padding:0;">
+          <div id="logContainer" class="tf-log">
+            <div class="tf-log__empty" id="logEmpty">
+              <i class="bi bi-terminal"></i>
+              <p>Aún no hay eventos.<br>Conecta el halcón para empezar.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ──────── Setup ──────── */
+  var root = document.getElementById('editorRoot');
+  if (!root) return;
+
+  var HALCON_ID      = parseInt(root.dataset.halconId, 10) || 0;
+  var USER_ID        = parseInt(root.dataset.userId, 10) || 0;
+  var TOKEN          = root.dataset.token || '';
+  var HAS_ASSIGNMENT = root.dataset.hasAssignment === '1';
+
+  var ws = null;
+  var streamTimer = null;
+
+  var els = {
+    // token
+    tokenField:   document.getElementById('tokenField'),
+    tokenToggle:  document.getElementById('tokenToggle'),
+    // status
+    connStatus:   document.getElementById('connStatus'),
+    connStatusText: document.getElementById('connStatusText'),
+    // botones
+    btnConnect:   document.getElementById('btnConnect'),
+    btnDisconnect:document.getElementById('btnDisconnect'),
+    btnSend:      document.getElementById('btnSend'),
+    btnStream:    document.getElementById('btnStream'),
+    btnStop:      document.getElementById('btnStop'),
+    btnClearLog:  document.getElementById('btnClearLog'),
+    // inputs
+    inputLat:     document.getElementById('inputLat'),
+    inputLng:     document.getElementById('inputLng'),
+    // log
+    logContainer: document.getElementById('logContainer'),
+    logEmpty:     document.getElementById('logEmpty')
+  };
+
+  /* ──────── Construcción de la URL ──────── */
+  function buildWsUrl() {
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return proto + '//' + location.host +
+           '/halcon/' + USER_ID + '/' + HALCON_ID + '/?token=' + encodeURIComponent(TOKEN);
+  }
+
+  /* ──────── Log helpers ──────── */
+  function log(kind, msg) {
+    if (els.logEmpty) {
+      els.logEmpty.style.display = 'none';
+    }
+
+    var t = new Date().toLocaleTimeString();
+    var line = document.createElement('div');
+    line.className = 'tf-log__line tf-log__line--' + kind;
+
+    var icons = {
+      info: '·',
+      ok:   '✓',
+      err:  '✗',
+      send: '↑',
+      recv: '↓'
+    };
+
+    line.innerHTML =
+      '<span class="tf-log__time">' + t + '</span>' +
+      '<span class="tf-log__icon">' + (icons[kind] || '·') + '</span>' +
+      '<span class="tf-log__msg"></span>';
+    line.querySelector('.tf-log__msg').textContent = msg;
+
+    els.logContainer.appendChild(line);
+    els.logContainer.scrollTop = els.logContainer.scrollHeight;
+  }
+
+  function clearLog() {
+    els.logContainer.innerHTML = '';
+    els.logContainer.appendChild(els.logEmpty);
+    els.logEmpty.style.display = '';
+  }
+
+  /* ──────── Estado de conexión ──────── */
+  function setConnStatus(text, kind) {
+    els.connStatusText.textContent = text;
+    els.connStatus.className = 'tf-conn-status' + (kind ? ' is-' + kind : '');
+  }
+
+  function setConnectedUI(connected) {
+    els.btnConnect.disabled    = connected;
+    els.btnDisconnect.disabled = !connected;
+    els.btnSend.disabled       = !connected;
+    els.btnStream.disabled     = !connected;
+
+    if (!connected) {
+      els.btnStop.style.display = 'none';
+      els.btnStream.style.display = '';
+      stopStream();
+    }
+  }
+
+  /* ──────── Conexión WebSocket ──────── */
+  function connect() {
+    if (!HAS_ASSIGNMENT) {
+      log('err', 'No se puede conectar: el halcón no está asignado.');
+      return;
+    }
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    var url = buildWsUrl();
+    log('info', 'Conectando al servidor…');
+    setConnStatus('Conectando…', 'idle');
+
+    try {
+      ws = new WebSocket(url);
+    } catch (e) {
+      log('err', 'Error al crear WebSocket: ' + e.message);
+      setConnStatus('Error', 'off');
+      return;
+    }
+
+    ws.onopen = function () {
+      log('ok', 'Conectado al servidor');
+      setConnStatus('Conectado', 'live');
+      setConnectedUI(true);
+    };
+
+    ws.onmessage = function (ev) {
+      log('recv', ev.data);
+    };
+
+    ws.onerror = function () {
+      log('err', 'Error de conexión');
+      setConnStatus('Error', 'off');
+    };
+
+    ws.onclose = function (e) {
+      var reason = e.reason ? ' · ' + e.reason : '';
+      log('info', 'Conexión cerrada (code=' + e.code + reason + ')');
+      setConnStatus('Desconectado', '');
+      setConnectedUI(false);
+      ws = null;
+    };
+  }
+
+  function disconnect() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      log('info', 'Cerrando conexión…');
+      ws.close(1000, 'Cierre manual');
+    }
+  }
+
+  /* ──────── Envío de coordenadas ──────── */
+  function sendCoord() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      log('err', 'No hay conexión activa');
+      return;
+    }
+
+    var lat = parseFloat(els.inputLat.value);
+    var lng = parseFloat(els.inputLng.value);
+
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      log('err', 'Coordenadas fuera de rango');
+      return;
+    }
+
+    var payload = JSON.stringify({ latitude: lat, longitude: lng });
+    ws.send(payload);
+    log('send', lat.toFixed(5) + ', ' + lng.toFixed(5));
+  }
+
+  function startStream() {
+    if (streamTimer) return;
+    log('info', 'Stream iniciado · 1 envío por segundo');
+    els.btnStream.style.display = 'none';
+    els.btnStop.style.display = '';
+    streamTimer = setInterval(sendCoord, 1000);
+    sendCoord();
+  }
+
+  function stopStream() {
+    if (streamTimer) {
+      clearInterval(streamTimer);
+      streamTimer = null;
+      log('info', 'Stream detenido');
+    }
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      els.btnStream.style.display = '';
+      els.btnStop.style.display = 'none';
+    }
+  }
+
+  /* ──────── Token toggle ──────── */
+  function toggleToken() {
+    var isPassword = els.tokenField.type === 'password';
+    els.tokenField.type = isPassword ? 'text' : 'password';
+    els.tokenToggle.innerHTML = isPassword
+      ? '<i class="bi bi-eye-slash"></i>'
+      : '<i class="bi bi-eye"></i>';
+  }
+
+  /* ──────── Eventos ──────── */
+  els.btnConnect.addEventListener('click', connect);
+  els.btnDisconnect.addEventListener('click', disconnect);
+  els.btnSend.addEventListener('click', sendCoord);
+  els.btnStream.addEventListener('click', startStream);
+  els.btnStop.addEventListener('click', stopStream);
+  els.btnClearLog.addEventListener('click', clearLog);
+  els.tokenToggle.addEventListener('click', toggleToken);
+
+  /* Estado inicial */
+  setConnectedUI(false);
+  setConnStatus('Desconectado', '');
+})();
+</script>
+{{ end }}
