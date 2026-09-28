@@ -7,7 +7,7 @@ import (
 	"goravel/app/models"
 	"goravel/app/requests"
 	"goravel/app/services"
-
+"github.com/gofiber/fiber/v3/middleware/csrf"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -21,27 +21,54 @@ func NewHalconController() *HalconController {
 	}
 }
 
-// Index - GET /moderator/halcones
 func (c *HalconController) Index(ctx fiber.Ctx) error {
-	moderatorID, _ := ctx.Locals("user_id").(uint)
-	role, _ := ctx.Locals("role").(string)
+    moderatorID, _ := ctx.Locals("user_id").(uint)
+    role, _ := ctx.Locals("role").(string)
 
-	var halcones []models.Halcon
-	var err error
+    page := atoiDefault(ctx.Query("page"), 1)
+    limit := atoiDefault(ctx.Query("limit"), 20)
+    search := strings.TrimSpace(ctx.Query("search"))
+    active := ctx.Query("active")
 
-	if role == "admin" {
-		err = facades.Orm().Query().Model(&models.Halcon{}).Find(&halcones)
-	} else {
-		halcones, err = c.halconService.GetByModeratorID(moderatorID)
-	}
+    // Lista de halcones del moderador (con la asignación activa cargada)
+    halcones, total, err := c.halconService.ListByModerator(moderatorID, page, limit, search, active, role == "admin")
+    if err != nil {
+        return ctx.Render("moderator/halcones/index", fiber.Map{
+            "title": "Mis halcones",
+            "flash_error": "Error al cargar los halcones",
+        }, "layouts/base")
+    }
 
-	if err != nil {
-		log.Printf("Error al listar halcones: %v", err)
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Error al obtener halcones",
-		})
-	}
-	return ctx.JSON(fiber.Map{"halcones": halcones})
+    // Usuarios disponibles para asignar (solo rol "user")
+    users, _, _ := c.userService.AdminListUsers(1, 200, "", "user")
+
+    stats, _ := c.halconService.StatsByModerator(moderatorID)
+
+    totalPages := int((total + int64(limit) - 1) / int64(limit))
+    if totalPages < 1 { totalPages = 1 }
+
+    prevPage := page - 1
+    if prevPage < 1 { prevPage = 1 }
+    nextPage := page + 1
+    if nextPage > totalPages { nextPage = totalPages }
+
+    return ctx.Render("moderator/halcones/index", fiber.Map{
+        "title":      "Mis halcones",
+        "halcones":   halcones,   // []HalconWithAssignment
+        "users":      users,      // []models.User
+        "stats":      stats,      // map[string]int64{"total", "active", "assigned"}
+        "total":      total,
+        "page":       page,
+        "limit":      limit,
+        "totalPages": totalPages,
+        "prevPage":   prevPage,
+        "nextPage":   nextPage,
+        "search":     search,
+        "active":     active,
+        "flash_error":   ctx.Query("error"),
+        "flash_success": ctx.Query("ok"),
+        "csrfToken":    csrf.TokenFromContext(ctx),
+    }, "layouts/base")
 }
 
 // Store - POST /moderator/halcones
@@ -55,14 +82,14 @@ func (c *HalconController) Store(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error()})
 	}
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"halcon": halcon})
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"halcon": halcon,"csrfToken":    csrf.TokenFromContext(ctx)})
 }
 
 // Assign - POST /moderator/halcones/assign
 func (c *HalconController) Assign(ctx fiber.Ctx) error {
 	var req requests.AssignHalconRequest
 	if err := ctx.Bind().Body(&req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos inválidos"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos inválidos","csrfToken":    csrf.TokenFromContext(ctx)})
 	}
 
 	moderatorID, _ := ctx.Locals("user_id").(uint)
@@ -82,7 +109,7 @@ func (c *HalconController) Destroy(ctx fiber.Ctx) error {
 	}
 
 	if err := c.halconService.Delete(id); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error(),"csrfToken":    csrf.TokenFromContext(ctx)})
 	}
 	return ctx.Status(fiber.StatusNoContent).Send(nil)
 }

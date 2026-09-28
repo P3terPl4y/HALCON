@@ -15,7 +15,13 @@ import (
 )
 
 type HalconService struct{}
+// app/services/halcon_service.go (o donde tengas el DTO)
 
+type HalconWithAssignment struct {
+    models.Halcon
+    AssignedUser *models.User `json:"assigned_user,omitempty"`
+    AssignedAt   *time.Time   `json:"assigned_at,omitempty"`
+}
 func NewHalconService() *HalconService { return &HalconService{} }
 
 // generateToken crea un token aleatorio de 32 bytes (64 hex chars).
@@ -285,4 +291,44 @@ func (s *HalconService) AdminGetAssignmentsHistory(halconID uint) ([]models.Halc
 		Order("assigned_at DESC").
 		Find(&assignments)
 	return assignments, err
+}
+func (s *HalconService) ListByModerator(
+    moderatorID uint, page, limit int,
+    search, active string, isAdmin bool,
+) ([]HalconWithAssignment, int64, error) {
+    if page < 1 { page = 1 }
+    if limit < 1 || limit > 100 { limit = 20 }
+
+    q := facades.Orm().Query().Model(&models.Halcon{}).
+        Select("halcones.*, users.name AS assigned_user_name, users.email AS assigned_user_email").
+        LeftJoin("halcon_assignments", "halcon_assignments.halcon_id = halcones.id AND halcon_assignments.ended_at IS NULL").
+        LeftJoin("users", "users.id = halcon_assignments.user_id")
+
+    if !isAdmin {
+        q = q.Where("halcon_assignments.moderator_id = ?", moderatorID).
+              OrWhere("halcones.id IN (SELECT halcon_id FROM halcon_assignments WHERE moderator_id = ?)", moderatorID)
+    }
+    if search != "" {
+        q = q.Where("halcones.name LIKE ?", "%"+search+"%")
+    }
+    if active == "1" {
+        q = q.Where("halcones.is_active = ?", true)
+    } else if active == "0" {
+        q = q.Where("halcones.is_active = ?", false)
+    }
+
+    var rows []HalconWithAssignment
+    var total int64
+
+    // Nota: la implementación exacta de JOIN+count depende de tu versión de Goravel.
+    // Si Paginate no funciona con joins, haz Count y Find por separado.
+
+    if err := q.Count(&total); err != nil {
+        return nil, 0, err
+    }
+    if err := q.Offset((page-1)*limit).Limit(limit).
+        Order("halcones.id DESC").Find(&rows); err != nil {
+        return nil, 0, err
+    }
+    return rows, total, nil
 }

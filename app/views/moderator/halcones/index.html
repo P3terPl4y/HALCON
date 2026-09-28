@@ -1,0 +1,363 @@
+{{ define "moderator/halcones/index" }}
+<link rel="stylesheet" href="/css/moderator-halcones.css">
+
+<div class="tf-page-header">
+  <div>
+    <h1><i class="bi bi-broadcast"></i> Mis halcones</h1>
+    <p>Dispositivos GPS que has creado y su estado actual</p>
+  </div>
+  <button type="button" class="btn btn-primary" data-open-dialog="dlg-create-halcon">
+    <i class="bi bi-plus-lg"></i> Nuevo halcón
+  </button>
+</div>
+
+{{ if .flash_error }}
+<div class="alert alert-danger tf-mb-4">
+  <i class="bi bi-exclamation-triangle"></i> {{ .flash_error }}
+</div>
+{{ end }}
+
+{{ if .flash_success }}
+<div class="alert alert-success tf-mb-4">
+  <i class="bi bi-check-circle"></i> {{ .flash_success }}
+</div>
+{{ end }}
+
+<!-- Stats -->
+<section class="tf-form-block" data-block="stats" style="margin-bottom:1.25rem;">
+  <div class="tf-form-block__body">
+    <div class="tf-home-stats tf-home-stats--3">
+      <div class="tf-home-stat">
+        <div class="tf-home-stat__icon tf-home-stat__icon--primary">
+          <i class="bi bi-broadcast"></i>
+        </div>
+        <div class="tf-home-stat__body">
+          <span class="tf-home-stat__label">Total creados</span>
+          <span class="tf-home-stat__value">{{ .stats.total }}</span>
+        </div>
+      </div>
+      <div class="tf-home-stat">
+        <div class="tf-home-stat__icon tf-home-stat__icon--success">
+          <i class="bi bi-broadcast-pin"></i>
+        </div>
+        <div class="tf-home-stat__body">
+          <span class="tf-home-stat__label">En vivo</span>
+          <span class="tf-home-stat__value">{{ .stats.active }}</span>
+        </div>
+      </div>
+      <div class="tf-home-stat">
+        <div class="tf-home-stat__icon tf-home-stat__icon--info">
+          <i class="bi bi-link-45deg"></i>
+        </div>
+        <div class="tf-home-stat__body">
+          <span class="tf-home-stat__label">Asignados</span>
+          <span class="tf-home-stat__value">{{ .stats.assigned }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Filtros -->
+<section class="tf-form-block" data-block="filters" style="margin-bottom:1.25rem;">
+  <header class="tf-form-block__head">
+    <i class="bi bi-funnel-fill tf-form-block__icon"></i>
+    <div class="tf-form-block__text">
+      <h2>Filtros</h2>
+      <p>Refina la lista de halcones</p>
+    </div>
+  </header>
+  <div class="tf-form-block__body">
+    <form method="GET" action="/moderator/halcones">
+      <div class="tf-form-row">
+        <div class="tf-col-6 tf-field">
+          <label class="form-label">Búsqueda</label>
+          <div class="tf-input-icon">
+            <i class="bi bi-search"></i>
+            <input type="text" name="search" class="form-control"
+                   placeholder="Nombre del halcón" value="{{ .search }}">
+          </div>
+        </div>
+        <div class="tf-col-4 tf-field">
+          <label class="form-label">Estado</label>
+          <select name="active" class="form-select">
+            <option value="">Todos</option>
+            <option value="1" {{ if eq .active "1" }}selected{{ end }}>En vivo</option>
+            <option value="0" {{ if eq .active "0" }}selected{{ end }}>Inactivos</option>
+          </select>
+        </div>
+        <div class="tf-col-2 tf-field">
+          <label class="form-label" style="visibility:hidden;">.</label>
+          <button type="submit" class="btn btn-primary tf-w-full">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- Tabla de halcones -->
+<section class="tf-form-block tf-form-block--last" data-block="table">
+  <header class="tf-form-block__head">
+    <i class="bi bi-table tf-form-block__icon"></i>
+    <div class="tf-form-block__text">
+      <h2>Resultados</h2>
+      <p>{{ .total }} halcón(es) encontrado(s)</p>
+    </div>
+  </header>
+  <div class="tf-form-block__body" style="padding:0;">
+
+    {{ if .halcones }}
+    <div class="table-responsive">
+      <table class="tf-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Estado</th>
+            <th>Asignado a</th>
+            <th>Última señal</th>
+            <th style="text-align:right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{ range .halcones }}
+          <tr>
+            <td class="tf-cell-id">#{{ .ID }}</td>
+            <td>
+              <strong>{{ .Name }}</strong>
+            </td>
+            <td>
+              {{ if .IsActive }}
+              <span class="badge bg-success"><i class="bi bi-broadcast-pin"></i> En vivo</span>
+              {{ else }}
+              <span class="badge bg-secondary"><i class="bi bi-slash-circle"></i> Inactivo</span>
+              {{ end }}
+            </td>
+            <td>
+              {{ if .AssignedUser }}
+              <div class="tf-cell-user">
+                <span class="tf-cell-user__name">{{ .AssignedUser.Name }}</span>
+                <span class="tf-cell-user__email">{{ .AssignedUser.Email }}</span>
+              </div>
+              {{ else }}
+              <span class="tf-text-muted" style="font-size:.8rem;">Sin asignar</span>
+              {{ end }}
+            </td>
+            <td>
+              {{ if .LastSeen }}
+              <span class="tf-text-mono">{{ .LastSeen.Format "02 Jan 15:04" }}</span>
+              {{ else }}
+              <span class="tf-text-muted">—</span>
+              {{ end }}
+            </td>
+            <td class="tf-cell-actions">
+              <button type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      title="Asignar a un usuario"
+                      data-open-dialog="dlg-assign-{{ .ID }}">
+                <i class="bi bi-person-plus"></i>
+              </button>
+              <form method="POST"
+                    action="/moderator/halcones/{{ .ID }}"
+                    style="display:inline;margin:0;"
+                    onsubmit="return confirm('¿Eliminar el halcón “{{ .Name }}”? Se cerrarán sus asignaciones.');">
+                <input type="hidden" name="_method" value="DELETE">
+                <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+
+    {{ if gt .totalPages 1 }}
+    <div class="tf-pagination-wrap">
+      <nav class="tf-pagination">
+        <a class="page-link {{ if eq .page 1 }}is-disabled{{ end }}"
+           href="?page={{ .prevPage }}&limit={{ .limit }}&search={{ .search }}&active={{ .active }}">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+        <span class="tf-pagination__current">Página {{ .page }} de {{ .totalPages }}</span>
+        <a class="page-link {{ if eq .page .totalPages }}is-disabled{{ end }}"
+           href="?page={{ .nextPage }}&limit={{ .limit }}&search={{ .search }}&active={{ .active }}">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </nav>
+    </div>
+    {{ end }}
+
+    {{ else }}
+    <div class="tf-empty" style="margin:0;">
+      <div class="tf-empty__icon"><i class="bi bi-broadcast"></i></div>
+      <h4>Sin halcones</h4>
+      <p>Aún no has creado halcones. Empieza creando uno nuevo para asignarlo a un usuario.</p>
+      <button type="button" class="btn btn-primary" data-open-dialog="dlg-create-halcon" style="margin-top:1rem;">
+        <i class="bi bi-plus-lg"></i> Crear el primero
+      </button>
+    </div>
+    {{ end }}
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL: CREAR HALCÓN
+     ═══════════════════════════════════════════════════════════════ -->
+<dialog id="dlg-create-halcon" class="tf-dialog">
+  <form method="POST" action="/moderator/halcones" class="tf-dialog__form">
+    <header class="tf-dialog__head">
+      <div>
+        <h2><i class="bi bi-plus-circle"></i> Nuevo halcón</h2>
+        <p>Registra un nuevo dispositivo GPS en el sistema</p>
+      </div>
+      <button type="button" class="tf-dialog__close" data-close-dialog aria-label="Cerrar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <div class="tf-dialog__body">
+      <div class="tf-field">
+        <label for="new-halcon-name" class="form-label">
+          Nombre del halcón <span class="req">*</span>
+        </label>
+        <input type="text"
+               id="new-halcon-name"
+               name="name"
+               class="form-control"
+               placeholder="Ej: Paquete #1234 - Zona Norte"
+               required
+               maxlength="100"
+               autocomplete="off">
+        <span class="tf-field-hint">
+          Un nombre descriptivo para identificar el envío o unidad que monitoreará.
+        </span>
+      </div>
+
+      <div class="tf-dialog__note">
+        <i class="bi bi-key-fill"></i>
+        <div>
+          <strong>Token de autenticación</strong>
+          <p>Al crear el halcón, el sistema generará un token único que deberás grabar en el dispositivo GPS.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="tf-dialog__foot">
+      <button type="button" class="btn btn-secondary" data-close-dialog>Cancelar</button>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg"></i> Crear halcón
+      </button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODALES: ASIGNAR CADA HALCÓN A UN USUARIO
+     ═══════════════════════════════════════════════════════════════ -->
+{{ range .halcones }}
+<dialog id="dlg-assign-{{ .ID }}" class="tf-dialog">
+  <form method="POST" action="/moderator/halcones/assign" class="tf-dialog__form">
+    <input type="hidden" name="halcon_id" value="{{ .ID }}">
+
+    <header class="tf-dialog__head">
+      <div>
+        <h2><i class="bi bi-person-plus"></i> Asignar halcón</h2>
+        <p>{{ .Name }} · Halcón #{{ .ID }}</p>
+      </div>
+      <button type="button" class="tf-dialog__close" data-close-dialog aria-label="Cerrar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <div class="tf-dialog__body">
+      {{ if .AssignedUser }}
+      <div class="tf-dialog__note tf-dialog__note--warning">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>
+          <strong>Actualmente asignado a {{ .AssignedUser.Name }}</strong>
+          <p>Si asignas a otro usuario, la asignación actual se cerrará automáticamente. El historial se conserva.</p>
+        </div>
+      </div>
+      {{ end }}
+
+      <div class="tf-field">
+        <label for="assign-user-{{ .ID }}" class="form-label">
+          Usuario destino <span class="req">*</span>
+        </label>
+        <select id="assign-user-{{ .ID }}" name="user_id" class="form-select" required>
+          <option value="">Selecciona un usuario…</option>
+          {{ range $.users }}
+          <option value="{{ .ID }}">{{ .Name }} ({{ .Email }})</option>
+          {{ end }}
+        </select>
+        <span class="tf-field-hint">Solo se muestran usuarios con rol "usuario".</span>
+      </div>
+
+      <div class="tf-field">
+        <label for="assign-package-{{ .ID }}" class="form-label">
+          ID del paquete <span class="opt">Opcional</span>
+        </label>
+        <input type="text"
+               id="assign-package-{{ .ID }}"
+               name="package_id"
+               class="form-control"
+               placeholder="Ej: PKG-9981"
+               maxlength="50">
+        <span class="tf-field-hint">Referencia interna del envío que monitorea este halcón.</span>
+      </div>
+    </div>
+
+    <footer class="tf-dialog__foot">
+      <button type="button" class="btn btn-secondary" data-close-dialog>Cancelar</button>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg"></i> Asignar halcón
+      </button>
+    </footer>
+  </form>
+</dialog>
+{{ end }}
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JS: apertura/cierre de diálogos
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  // Abrir
+  document.querySelectorAll('[data-open-dialog]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-open-dialog');
+      var dlg = document.getElementById(id);
+      if (dlg && typeof dlg.showModal === 'function') dlg.showModal();
+    });
+  });
+
+  // Cerrar por botón
+  document.querySelectorAll('[data-close-dialog]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var dlg = btn.closest('dialog');
+      if (dlg) dlg.close();
+    });
+  });
+
+  // Cerrar al hacer click en el backdrop
+  document.querySelectorAll('dialog.tf-dialog').forEach(function (dlg) {
+    dlg.addEventListener('click', function (e) {
+      if (e.target === dlg) dlg.close();
+    });
+  });
+
+  // Cerrar con Escape (comportamiento nativo del dialog, por si acaso)
+  document.querySelectorAll('dialog.tf-dialog').forEach(function (dlg) {
+    dlg.addEventListener('cancel', function (e) {
+      // nada extra, el dialog se cierra solo
+    });
+  });
+})();
+</script>
+{{ end }}
