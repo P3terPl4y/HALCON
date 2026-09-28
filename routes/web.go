@@ -29,13 +29,14 @@ func Web(app *fiber.App) {
 	protected.Get("/profile/edit", usrCtrl.Edit)
 	protected.Post("/profile/edit", usrCtrl.Update)
 	protected.Get("/users", usrCtrl.Index)
-
+	protected.Get("/halcon/init", func (c fiber.Ctx)error{return c.Render("halcon",fiber.Map{},"layouts/base")})
 	// --- Panel de moderador (auth + rol) ---
 	halconCtrl := controllers.NewHalconController()
 	moderator := app.Group("/moderator",
 		middlewares.AuthMiddleware(),
 		middlewares.ModeratorMiddleware(),
 	)
+	moderator.Get("/halcon/init", func (c fiber.Ctx)error{return c.SendFile("halcon.html")})
 	moderator.Get("/halcones", halconCtrl.Index)
 	moderator.Post("/halcones", halconCtrl.Store)
 	moderator.Post("/halcones/assign", halconCtrl.Assign)

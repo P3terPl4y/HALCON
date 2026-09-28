@@ -3,7 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
-
+	"log"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/requests"
@@ -66,6 +66,7 @@ func (s *UserService) CreateUserWithRole(req *requests.CreateUserRequest) (*mode
 	}
 
 	if err := facades.Orm().Query().Create(&user); err != nil {
+		log.Printf("Error al crear usuario: ",err)
 		return nil, fmt.Errorf("crear usuario: %w", err)
 	}
 	return &user, nil
