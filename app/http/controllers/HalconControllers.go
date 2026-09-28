@@ -3,8 +3,8 @@ package controllers
 import (
 	"strings"
 
-	"goravel/app/facades"
-	"goravel/app/models"
+	
+
 	"goravel/app/requests"
 	"goravel/app/services"
 "github.com/gofiber/fiber/v3/middleware/csrf"
@@ -18,6 +18,7 @@ type HalconController struct {
 func NewHalconController() *HalconController {
 	return &HalconController{
 		halconService: services.NewHalconService(),
+		userService:services.NewUserService(
 	}
 }
 
