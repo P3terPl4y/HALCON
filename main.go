@@ -218,6 +218,6 @@ func main() {
 	routes.Web(app)
 
 	// ── 13. Arranque ──
-	log.Println("🚀 ALCON escuchando en :3000")
-	log.Fatal(app.Listen(":3000"))
+	log.Println("🚀 ALCON escuchando en :3300")
+	log.Fatal(app.Listen(":3300"))
 }
