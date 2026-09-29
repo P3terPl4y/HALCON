@@ -1,22 +1,207 @@
-{{ define "auth/login" }}
-<h1>Iniciar sesión</h1>
-<p class="subtitle">Bienvenido de vuelta a Apolo</p>
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión · HALCON</title>
+<meta name="description" content="Accede a tu cuenta de HALCON para monitorear tus halcones en tiempo real.">
+<meta name="robots" content="noindex,follow">
 
-<form method="POST" action="/login">
-    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
 
-    <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" value="{{ if .old }}{{ .old.email }}{{ end }}" required autofocus>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('halcon-theme');
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+  }catch(e){}
+})();
+</script>
+
+<link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+
+<svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<symbol id="i-logo" viewBox="0 0 24 24"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="m1 1 22 22"/><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.5 13.5 0 0 0 1 12s4 7 11 7a9.74 9.74 0 0 0 5.39-1.61"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-broadcast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.25a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16M16 6v16"/></symbol>
+</defs>
+</svg>
+
+<div class="auth">
+
+  <aside class="auth__brand">
+    <div class="auth__brand-logo">
+      <span class="auth__brand-mark" aria-hidden="true">
+        <svg class="icon"><use href="#i-logo"/></svg>
+      </span>
+      <span class="auth__brand-name">HALCON</span>
     </div>
 
-    <div class="form-group">
-        <label for="password">Contraseña</label>
-        <input type="password" id="password" name="password" required>
+    <div class="auth__brand-content">
+      <span class="auth__brand-eyebrow">
+        <svg class="icon" aria-hidden="true"><use href="#i-broadcast"/></svg>
+        Rastreo GPS en tiempo real
+      </span>
+      <h2 class="auth__brand-title">
+        Cada paquete.<br>
+        Cada halcón.<br>
+        <em>En vivo.</em>
+      </h2>
+      <p class="auth__brand-sub">
+        Accede al panel donde ves tus envíos moverse en tiempo real, con
+        historial de recorrido persistente y control total sobre quién ve qué.
+      </p>
+
+      <div class="auth__brand-visual" aria-hidden="true">
+        <div class="auth__path">
+          <svg viewBox="0 0 400 200" preserveAspectRatio="none">
+            <path d="M 60 70 Q 120 120 200 110 T 340 150"/>
+            <circle r="4" cx="0" cy="0"/>
+          </svg>
+        </div>
+        <span class="auth__pin auth__pin--1"></span>
+        <span class="auth__pin auth__pin--2"></span>
+        <span class="auth__pin auth__pin--3"></span>
+      </div>
+
+      <div class="auth__brand-features">
+        <div class="auth__brand-feature">
+          <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+          <span>Sesiones cifradas con CSRF y expiración</span>
+        </div>
+        <div class="auth__brand-feature">
+          <svg class="icon" aria-hidden="true"><use href="#i-map"/></svg>
+          <span>Mapas OpenStreetMap · sin API keys</span>
+        </div>
+        <div class="auth__brand-feature">
+          <svg class="icon" aria-hidden="true"><use href="#i-broadcast"/></svg>
+          <span>Coordenadas por WebSocket, sin polling</span>
+        </div>
+      </div>
     </div>
+  </aside>
 
-    <button type="submit" class="btn">Iniciar sesión</button>
-</form>
+  <main class="auth__panel">
+    <button type="button" class="auth__theme-toggle" id="authThemeToggle"
+            aria-label="Cambiar tema" aria-pressed="false">
+      <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+      <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+    </button>
 
-<p class="link">¿No tienes cuenta? <a href="/register">Regístrate</a></p>
-{{ end }}
+    <div class="auth__form-wrap">
+      <header class="auth__header">
+        <h1 class="auth__title">Iniciar sesión</h1>
+        <p class="auth__subtitle">Bienvenido de vuelta a HALCON</p>
+      </header>
+
+      {{ if .flash_error }}
+      <div class="auth__alert auth__alert--error" role="alert">
+        <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+        <span>{{ .flash_error }}</span>
+      </div>
+      {{ end }}
+
+      {{ if .flash_success }}
+      <div class="auth__alert auth__alert--success" role="status">
+        <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+        <span>{{ .flash_success }}</span>
+      </div>
+      {{ end }}
+
+      <form method="POST" action="/login" class="auth__form" data-guard-submit>
+        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+        <div class="auth__field {{ if .errors.email }}has-error{{ end }}">
+          <label for="email">Email</label>
+          <div class="auth__input-wrap">
+            <svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>
+            <input type="email"
+                   id="email"
+                   name="email"
+                   class="auth__input"
+                   value="{{ if .old }}{{ .old.email }}{{ end }}"
+                   placeholder="tu@empresa.com"
+                   autocomplete="email"
+                   autocapitalize="off"
+                   spellcheck="false"
+                   required
+                   autofocus>
+          </div>
+          {{ if .errors.email }}
+          <span class="auth__error">
+            <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+            {{ .errors.email }}
+          </span>
+          {{ end }}
+        </div>
+
+        <div class="auth__field {{ if .errors.password }}has-error{{ end }}">
+          <label for="password">Contraseña</label>
+          <div class="auth__input-wrap">
+            <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+            <input type="password"
+                   id="password"
+                   name="password"
+                   class="auth__input"
+                   placeholder="••••••••"
+                   autocomplete="current-password"
+                   required>
+            <button type="button"
+                    class="auth__pw-toggle"
+                    data-pw-toggle="password"
+                    aria-pressed="false"
+                    aria-label="Mostrar contraseña"
+                    tabindex="0">
+              <svg class="icon icon-eye" aria-hidden="true"><use href="#i-eye"/></svg>
+              <svg class="icon icon-eye-off" aria-hidden="true"><use href="#i-eye-off"/></svg>
+            </button>
+          </div>
+          {{ if .errors.password }}
+          <span class="auth__error">
+            <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+            {{ .errors.password }}
+          </span>
+          {{ end }}
+        </div>
+
+        <div class="auth__row">
+          <label class="auth__check">
+            <input type="checkbox" name="remember" value="1">
+            <span>Mantener sesión</span>
+          </label>
+          <a href="/forgot-password" class="auth__link">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button type="submit" class="auth__submit">
+          Iniciar sesión
+          <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </button>
+      </form>
+
+      <p class="auth__footer">
+        ¿No tienes cuenta? <a href="/register">Crear una cuenta</a>
+      </p>
+    </div>
+  </main>
+
+</div>
+
+<script defer src="/js/auth.js"></script>
+</body>
+</html>

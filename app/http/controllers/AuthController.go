@@ -29,7 +29,7 @@ func (c *AuthController) ShowRegister(ctx fiber.Ctx) error {
 	facades.Log().Debug("Mostrando formulario de registro")
 	return ctx.Render("auth/register", fiber.Map{
 		"title": "Crear cuenta","csrfToken":    csrf.TokenFromContext(ctx),
-	}, "layouts/base")
+	})
 }
 
 // Register - POST /register
@@ -96,7 +96,7 @@ func (c *AuthController) ShowLogin(ctx fiber.Ctx) error {
 	facades.Log().Debug("Mostrando formulario de login")
 	return ctx.Render("auth/login", fiber.Map{
 		"title": "Iniciar sesión","csrfToken":    csrf.TokenFromContext(ctx),
-	}, "layouts/base")
+	})
 }
 
 // Login - POST /login
