@@ -28,7 +28,9 @@
   --grad-accent:linear-gradient(135deg,var(--ice-400) 0%,var(--v-500) 100%);
   --grad-text:linear-gradient(135deg,var(--v-500) 0%,var(--ice-500) 100%);
 }
-
+ [data-theme="dark"] .auth__logo{
+    content:url('/img/halcon_white.svg');
+  }
 [data-theme="dark"]{
   --bg:#0a0618; --bg-alt:#150d2c; --surface:#150d2c; --surface-2:#1a1130; --surface-3:#241845;
   --text:#f1eefa; --text-strong:#ffffff; --text-muted:#cbbdf0; --text-subtle:#a896e6;
