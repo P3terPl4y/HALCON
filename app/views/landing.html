@@ -110,12 +110,42 @@ img{max-width:100%;display:block}
   text-decoration:none;flex-shrink:0;
 }
 .nav__brand-mark{
-  width:36px;height:36px;border-radius:10px;
+  width:40px;height:40px;border-radius:11px;
   background:var(--grad-accent);color:#fff;
   display:grid;place-items:center;
-  box-shadow:0 4px 14px rgba(56,189,248,.28);
+  object-fit:contain;      /* el SVG nunca se deforma */
+  flex-shrink:0;           /* nunca se aplasta en pantallas pequeñas */
+  box-shadow:
+    0 4px 16px rgba(56,189,248,.38),
+    0 0 0 1px rgba(255,255,255,.55),
+    0 0 0 4px color-mix(in srgb,var(--ice-500) 15%,transparent);
+  transition:transform .2s var(--ease),box-shadow .2s var(--ease);
 }
 .nav__brand-mark .icon{width:20px;height:20px}
+
+/* Realce del logo: más contraste y legibilidad, sin moverlo de sitio */
+.nav__brand:hover .nav__brand-mark,
+.nav__brand:focus-visible .nav__brand-mark{
+  transform:translateY(-1px) scale(1.05);
+  box-shadow:
+    0 8px 22px rgba(56,189,248,.45),
+    0 0 0 1px rgba(255,255,255,.7),
+    0 0 0 5px color-mix(in srgb,var(--ice-500) 22%,transparent);
+}
+[data-theme="dark"] .nav__brand-mark{
+  box-shadow:
+    0 4px 18px rgba(0,0,0,.5),
+    0 0 0 1px rgba(255,255,255,.22),
+    0 0 0 4px rgba(56,189,248,.14);
+  filter:brightness(1.06) contrast(1.05);
+}
+[data-theme="dark"] .nav__brand:hover .nav__brand-mark,
+[data-theme="dark"] .nav__brand:focus-visible .nav__brand-mark{
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.55),
+    0 0 0 1px rgba(255,255,255,.32),
+    0 0 0 5px rgba(56,189,248,.22);
+}
 .nav__brand-name{
   font-weight:800;font-size:1.05rem;
   letter-spacing:.08em;color:var(--text);
