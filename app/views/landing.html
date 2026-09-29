@@ -109,19 +109,60 @@ img{max-width:100%;display:block}
   padding-left:12px;border-left:3px solid var(--ice-500);
   text-decoration:none;flex-shrink:0;
 }
+/* ============================================================
+   LOGO — sin fondo, sin marco, tamaño "dedo pulgar"
+   El ancho es automático (respeta la proporción del SVG),
+   así que nunca se deforma ni se aplasta.
+   ============================================================ */
+/* ============================================================
+   LOGO — sin fondo, sin marco, tamaño "dedo pulgar"
+   El ancho es automático (respeta la proporción del SVG),
+   así que nunca se deforma ni se aplasta.
+   ============================================================ */
 .nav__brand-mark{
-  width:40px;height:40px;border-radius:11px;
-  background:var(--grad-accent);color:#fff;
-  display:grid;place-items:center;
-  object-fit:contain;      /* el SVG nunca se deforma */
-  flex-shrink:0;           /* nunca se aplasta en pantallas pequeñas */
-  box-shadow:
-    0 4px 16px rgba(56,189,248,.38),
-    0 0 0 1px rgba(255,255,255,.55),
-    0 0 0 4px color-mix(in srgb,var(--ice-500) 15%,transparent);
-  transition:transform .2s var(--ease),box-shadow .2s var(--ease);
+  display:block;                 /* era grid: ya no hay caja que centrar */
+  width:auto;                    /* el SVG manda en la proporción */
+  height:clamp(44px,4.6vw,58px); /* ≈ un dedo pulgar de largo */
+  max-width:none;
+  object-fit:contain;
+  object-position:left center;   /* anclado donde estaba la caja anterior */
+  flex-shrink:0;                 /* nunca se aplasta en móvil */
+  background:none;               /* sin degradado */
+  border:0;
+  border-radius:0;
+  box-shadow:none;               /* fuera anillos y halos de caja */
+  /* Definición sin fondo: sombra suave + halo de 1px que
+     garantiza contraste tanto si el SVG es claro como oscuro */
+  filter:
+    drop-shadow(0 2px 3px rgba(10,6,24,.20))
+    drop-shadow(0 0 1px rgba(10,6,24,.18));
+  transition:transform .2s var(--ease),filter .2s var(--ease);
 }
-.nav__brand-mark .icon{width:20px;height:20px}
+.nav__brand-mark .icon{width:24px;height:24px}
+
+/* Realce al pasar el cursor: crece un poco, no se mueve de sitio */
+.nav__brand:hover .nav__brand-mark,
+.nav__brand:focus-visible .nav__brand-mark{
+  transform:translateY(-1px) scale(1.04);
+  filter:
+    drop-shadow(0 4px 8px rgba(10,6,24,.26))
+    drop-shadow(0 0 1px rgba(10,6,24,.22));
+}
+
+/* Modo oscuro: halo claro para que el logo nunca se funda con el fondo */
+[data-theme="dark"] .nav__brand-mark{
+  filter:
+    drop-shadow(0 2px 4px rgba(0,0,0,.55))
+    drop-shadow(0 0 1px rgba(255,255,255,.22))
+    brightness(1.08) contrast(1.05);
+}
+[data-theme="dark"] .nav__brand:hover .nav__brand-mark,
+[data-theme="dark"] .nav__brand:focus-visible .nav__brand-mark{
+  filter:
+    drop-shadow(0 4px 10px rgba(0,0,0,.60))
+    drop-shadow(0 0 1px rgba(255,255,255,.30))
+    brightness(1.12) contrast(1.06);
+}
 
 /* Realce del logo: más contraste y legibilidad, sin moverlo de sitio */
 .nav__brand:hover .nav__brand-mark,
