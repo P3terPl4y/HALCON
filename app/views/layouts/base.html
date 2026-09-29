@@ -9,7 +9,7 @@
 <script>
 (function(){
   try {
-    var saved = localStorage.getItem('alcon-theme');
+    var saved = localStorage.getItem('halcon-theme');
     var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
   } catch(e){}
@@ -18,7 +18,7 @@
 
 <style>
 /* ============================================================
-   ALCON · Design System v1.0
+   HALCON · Design System v1.0
    Paleta fría: violeta profundo + blanco + azul glaciar
    ============================================================ */
 :root {
@@ -38,7 +38,7 @@
   --tf-red-500:#ef4444; --tf-red-600:#dc2626; --tf-red-400:#f87171; --tf-red-050:#fef2f2;
   --tf-danger:var(--tf-red-500); --tf-danger-bg:var(--tf-red-050);
 
-  /* Aliases de compatibilidad: los "yellow" ahora son ice */
+  /* Aliases de compatibilidad */
   --tf-yellow-500:var(--ice-500);
   --tf-yellow-600:var(--ice-600);
   --tf-yellow-050:var(--ice-100);
@@ -209,28 +209,29 @@ a:hover{color:var(--ice-500)}
 .bf-topbar__left{display:flex;align-items:center;min-width:0;gap:12px}
 .bf-topbar__right{display:flex;align-items:center;gap:6px;justify-content:flex-end}
 
-/* Brand */
+/* ============================================================
+   Brand — logo reemplazable
+   ============================================================ */
 .bf-brand{
-  display:inline-flex;align-items:center;gap:10px;
-  padding:4px 4px 4px 0;
-  text-decoration:none;
+  display:inline-flex;align-items:center;
+  height:44px;
+  padding:4px 12px;
   border-left:3px solid var(--ice-500);
-  padding-left:10px;
+  border-radius:0 10px 10px 0;
+  text-decoration:none;
+  /* Placeholder visible mientras no exista /img/logo.svg */
+  background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(109,84,201,.08));
+  transition:background-color .15s ease;
 }
-.bf-brand__mark{
-  width:36px;height:36px;border-radius:10px;
-  background:var(--tf-gradient-red);
-  color:#fff;
-  display:grid;place-items:center;
-  box-shadow:var(--tf-shadow-red);
+.bf-brand:hover{
+  background:linear-gradient(135deg,rgba(56,189,248,.14),rgba(109,84,201,.14));
 }
-.bf-brand__mark .icon{width:20px;height:20px}
-.bf-brand__name{
-  font-family:var(--tf-font-display);
-  font-size:var(--tf-fs-base);
-  font-weight:var(--tf-fw-bold);
-  letter-spacing:.06em;
-  color:var(--tf-text);
+.bf-brand__logo{
+  display:block;
+  height:100%;
+  width:auto;
+  max-width:180px;
+  object-fit:contain;
 }
 
 /* Breadcrumb/context */
@@ -338,6 +339,36 @@ a:hover{color:var(--ice-500)}
   display:flex;flex-direction:column;
 }
 [data-theme="dark"] .bf-sidebar{background:#06040f}
+
+/* Sidebar brand */
+.bf-sidebar__brand{
+  display:flex;
+  justify-content:center;
+  padding:0 8px 16px;
+  margin-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.bf-sidebar__brand a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 14px;
+  border-radius:10px;
+  width:100%;
+  /* Placeholder visible mientras no exista /img/logo.svg */
+  background:linear-gradient(135deg,rgba(56,189,248,.10),rgba(109,84,201,.10));
+  transition:background-color .15s ease;
+}
+.bf-sidebar__brand a:hover{
+  background:linear-gradient(135deg,rgba(56,189,248,.16),rgba(109,84,201,.16));
+}
+.bf-sidebar__logo{
+  display:block;
+  height:32px;
+  width:auto;
+  max-width:140px;
+  object-fit:contain;
+}
 
 .bf-sidebar__header{padding:0 12px 12px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08)}
 .bf-sidebar__title{
@@ -1205,7 +1236,7 @@ a:hover{color:var(--ice-500)}
 @media(max-width:768px){
   .bf-user-btn__info{display:none}
   .bf-topbar{padding:0 12px;gap:8px}
-  .bf-brand__name{display:none}
+  .bf-brand{padding:2px 8px}
   .bf-topbar__context{font-size:.78rem}
 }
 
@@ -1275,7 +1306,6 @@ a:hover{color:var(--ice-500)}
      ══════════════════════════════════════════════════════════════ -->
 <svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
-<symbol id="i-logo" viewBox="0 0 24 24"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></symbol>
 <symbol id="i-speedometer" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
 <symbol id="i-broadcast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.25a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></symbol>
 <symbol id="i-broadcast-pin" viewBox="0 0 24 24"><path d="M12 2a6 6 0 0 0-6 6c0 4.5 6 12 6 12s6-7.5 6-12a6 6 0 0 0-6-6z"/><circle cx="12" cy="8" r="2" fill="currentColor" stroke="none"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></symbol>
@@ -1335,11 +1365,8 @@ a:hover{color:var(--ice-500)}
       <button class="bf-icon-btn" id="btnBurger" aria-label="Abrir menú" aria-expanded="false" style="display:none">
         <svg class="icon"><use href="#i-menu"/></svg>
       </button>
-      <a href="/" class="bf-brand">
-        <span class="bf-brand__mark" aria-hidden="true">
-          <svg class="icon"><use href="#i-logo"/></svg>
-        </span>
-        <span class="bf-brand__name">ALCON</span>
+      <a href="/" class="bf-brand" aria-label="HALCON · Inicio">
+        <img src="/img/logo.svg" alt="HALCON" class="bf-brand__logo" width="180" height="40">
       </a>
     </div>
 
@@ -1376,6 +1403,12 @@ a:hover{color:var(--ice-500)}
   <!-- ══ BODY ══ -->
   <div class="bf-body">
     <aside class="bf-sidebar" id="bfSidebar" aria-label="Navegación principal">
+      <div class="bf-sidebar__brand">
+        <a href="/" aria-label="HALCON · Inicio">
+          <img src="/img/logo.svg" alt="HALCON" class="bf-sidebar__logo" width="140" height="32">
+        </a>
+      </div>
+
       <div class="bf-sidebar__header">
         <span class="bf-sidebar__title">Navegación</span>
       </div>
@@ -1454,7 +1487,7 @@ a:hover{color:var(--ice-500)}
     if(btn) btn.setAttribute('aria-pressed', theme==='dark' ? 'true' : 'false');
   }
   try{
-    var saved=localStorage.getItem('alcon-theme');
+    var saved=localStorage.getItem('halcon-theme');
     var prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
     apply(saved||(prefersDark?'dark':'light'));
   }catch(e){}
@@ -1463,7 +1496,7 @@ a:hover{color:var(--ice-500)}
       var cur=root.getAttribute('data-theme')==='dark'?'dark':'light';
       var next=cur==='dark'?'light':'dark';
       apply(next);
-      try{localStorage.setItem('alcon-theme',next);}catch(e){}
+      try{localStorage.setItem('halcon-theme',next);}catch(e){}
     });
   }
 

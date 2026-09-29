@@ -46,9 +46,9 @@
       });
     });
 
-    /* ============================================================
+     /* ============================================================
        PASSWORD STRENGTH (solo register)
-       Calcula score 0-4 según longitud y variedad de caracteres.
+       Score 0-4. Muestra "Muy débil" desde el primer carácter.
        ============================================================ */
     var pwInput = document.getElementById('password');
     var strengthEl = document.getElementById('pwStrength');
@@ -68,15 +68,20 @@
         return Math.min(score, 4);
       }
 
-      pwInput.addEventListener('input', function(){
-        var score = scorePassword(pwInput.value);
-        strengthEl.setAttribute('data-score', String(score));
-        if(strengthLabel){
-          strengthLabel.textContent = pwInput.value ? labels[score] : '';
-        }
-      });
-    }
+      function updateStrength(){
+        var value = pwInput.value;
+        var score = scorePassword(value);
 
+        strengthEl.setAttribute('data-score', String(score));
+
+        if(strengthLabel){
+          strengthLabel.textContent = value ? labels[score] : '';
+        }
+      }
+
+      pwInput.addEventListener('input', updateStrength);
+      updateStrength(); // por si el navegador autocompletó
+    }
     /* ============================================================
        CONFIRM PASSWORD MATCH
        Muestra un pequeño texto "Las contraseñas no coinciden"

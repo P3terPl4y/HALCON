@@ -27,7 +27,6 @@
 
 <svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
-<symbol id="i-logo" viewBox="0 0 24 24"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></symbol>
 <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
 <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
 <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
@@ -49,12 +48,9 @@
 <div class="auth">
 
   <aside class="auth__brand">
-    <div class="auth__brand-logo">
-      <span class="auth__brand-mark" aria-hidden="true">
-        <svg class="icon"><use href="#i-logo"/></svg>
-      </span>
-      <span class="auth__brand-name">HALCON</span>
-    </div>
+    <a href="/" class="auth__brand-logo" aria-label="HALCON · Inicio">
+      <img src="/img/halcon.svg" alt="HALCON" class="auth__logo" width="220" height="48">
+    </a>
 
     <div class="auth__brand-content">
       <span class="auth__brand-eyebrow">
@@ -266,8 +262,7 @@
           <label class="auth__check">
             <input type="checkbox" name="terms" value="1" required>
             <span>
-              Acepto los <a href="/terminos" target="_blank" rel="noopener">términos</a>
-              y la <a href="/privacidad" target="_blank" rel="noopener">política de privacidad</a>
+              Acepto usar HALCON de forma responsable y no rastrear activos sin autorización.
             </span>
           </label>
         </div>

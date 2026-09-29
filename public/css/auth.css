@@ -575,3 +575,53 @@ input{font:inherit}
 @media (prefers-reduced-transparency: reduce){
   .auth__brand{background:var(--v-950)}
 }
+/* ============================================================
+   Logo de marca — reemplaza el SVG inline por imagen
+   ============================================================ */
+.auth__brand-logo{
+  position:relative;z-index:1;
+  display:inline-flex;
+  align-items:center;
+  height:52px;
+  padding:6px 14px;
+  align-self:flex-start;
+  border-radius:12px;
+  text-decoration:none;
+  /* Placeholder visible mientras no exista /img/logo.svg */
+  background:linear-gradient(135deg,rgba(56,189,248,.10),rgba(109,84,201,.10));
+  border:1px dashed rgba(255,255,255,.15);
+  transition:border-color .2s var(--ease),background-color .2s var(--ease);
+}
+.auth__brand-logo:hover{
+  border-color:rgba(56,189,248,.4);
+}
+.auth__logo{
+  display:block;
+  height:100%;
+  width:auto;
+  max-width:220px;
+  object-fit:contain;
+}
+
+@media (max-width:900px){
+  .auth__brand-logo{
+    height:44px;
+    padding:4px 10px;
+  }
+}
+
+/* ============================================================
+   Grid en pantallas muy anchas (2K+)
+   El panel de marca deja de ocupar 50% y se fija a un ancho útil.
+   ============================================================ */
+@media (min-width:1600px){
+  .auth{
+    grid-template-columns:minmax(0,620px) minmax(0,1fr);
+  }
+  .auth__brand{
+    padding:64px 56px;
+  }
+  .auth__brand-content{
+    max-width:480px;
+  }
+}
