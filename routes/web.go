@@ -10,7 +10,7 @@ import (
 func Web(app *fiber.App) {
 	// --- Ruta raíz ---
 	app.Get("/", func(c fiber.Ctx) error {
-		return c.SendString("ALCON")
+		return c.Render("landing",fiber.Map{})
 	})
 
 	// --- Rutas públicas (sin auth) ---
