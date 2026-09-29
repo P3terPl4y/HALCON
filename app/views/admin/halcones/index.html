@@ -1,58 +1,69 @@
-
 <div class="bf-main__header">
   <div>
-    <h1 class="bf-main__title">Gestión de halcones</h1>
-    <p class="bf-main__subtitle">Administra los dispositivos GPS del sistema</p>
+    <h1 class="bf-main__title">Gestión de usuarios</h1>
+    <p class="bf-main__subtitle">Administra las cuentas y roles del sistema</p>
   </div>
-  <a href="/admin/halcones/create" class="btn btn-primary">
-    <i class="bi bi-plus-lg"></i> Nuevo halcón
+  <a href="/admin/users/create" class="btn btn-primary">
+    <svg class="icon"><use href="#i-person-plus"/></svg> Nuevo usuario
   </a>
 </div>
 
 <div class="tf-home-stats tf-home-stats--3" style="margin-bottom:1.25rem;">
   <div class="tf-home-stat">
-    <div class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-broadcast"></i></div>
+    <div class="tf-home-stat__icon tf-home-stat__icon--primary" aria-hidden="true">
+      <svg class="icon"><use href="#i-people"/></svg>
+    </div>
     <div class="tf-home-stat__body">
       <span class="tf-home-stat__label">Total</span>
-      <span class="tf-home-stat__value">{{ index .stats "total" }}</span>
+      <span class="tf-home-stat__value">{{ .total }}</span>
     </div>
   </div>
   <div class="tf-home-stat">
-    <div class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-broadcast-pin"></i></div>
+    <div class="tf-home-stat__icon tf-home-stat__icon--info" aria-hidden="true">
+      <svg class="icon"><use href="#i-person-badge"/></svg>
+    </div>
     <div class="tf-home-stat__body">
-      <span class="tf-home-stat__label">Activos</span>
-      <span class="tf-home-stat__value">{{ index .stats "active" }}</span>
+      <span class="tf-home-stat__label">Moderadores</span>
+      <span class="tf-home-stat__value">{{ index .stats "moderator" }}</span>
     </div>
   </div>
   <div class="tf-home-stat">
-    <div class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-link-45deg"></i></div>
+    <div class="tf-home-stat__icon tf-home-stat__icon--warning" aria-hidden="true">
+      <svg class="icon"><use href="#i-shield-lock"/></svg>
+    </div>
     <div class="tf-home-stat__body">
-      <span class="tf-home-stat__label">Asignados</span>
-      <span class="tf-home-stat__value">{{ index .stats "assigned" }}</span>
+      <span class="tf-home-stat__label">Administradores</span>
+      <span class="tf-home-stat__value">{{ index .stats "admin" }}</span>
     </div>
   </div>
 </div>
 
-<form method="GET" action="/admin/halcones" class="tf-filters" style="margin-bottom:1rem;">
+<form method="GET" action="/admin/users" class="tf-filters" style="margin-bottom:1rem;">
   <div class="tf-filters__body">
     <div class="tf-filters__grid">
-      <input type="text" name="search" class="form-control" placeholder="Buscar por nombre" value="{{ .search }}">
-      <select name="active" class="form-select">
-        <option value="">Todos</option>
-        <option value="1" {{ if eq .active "1" }}selected{{ end }}>Activos</option>
-        <option value="0" {{ if eq .active "0" }}selected{{ end }}>Inactivos</option>
+      <input type="text" name="search" class="form-control" placeholder="Buscar por nombre o email" value="{{ .search }}">
+      <select name="role" class="form-select">
+        <option value="">Todos los roles</option>
+        <option value="user" {{ if eq .roleFilter "user" }}selected{{ end }}>Usuario</option>
+        <option value="moderator" {{ if eq .roleFilter "moderator" }}selected{{ end }}>Moderador</option>
+        <option value="admin" {{ if eq .roleFilter "admin" }}selected{{ end }}>Administrador</option>
       </select>
     </div>
     <div class="tf-filters__actions">
-      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Filtrar</button>
-      <a href="/admin/halcones" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+      <button type="submit" class="btn btn-primary btn-sm">
+        <svg class="icon"><use href="#i-search"/></svg> Filtrar
+      </button>
+      <a href="/admin/users" class="btn btn-outline-secondary btn-sm">Limpiar</a>
     </div>
   </div>
 </form>
 
 <div class="tf-table-card">
   <div class="tf-table-card__header">
-    <h3 class="tf-table-card__title"><i class="bi bi-broadcast"></i> Halcones</h3>
+    <h3 class="tf-table-card__title">
+      <svg class="icon" aria-hidden="true"><use href="#i-people"/></svg>
+      Usuarios
+    </h3>
     <span class="tf-table-card__count">{{ .total }} registros</span>
   </div>
   <div class="table-responsive">
@@ -61,48 +72,49 @@
         <tr>
           <th>ID</th>
           <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
           <th>Estado</th>
-          <th>Última señal</th>
           <th style="text-align:right;">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        {{ range .halcones }}
+        {{ range .users }}
         <tr>
-          <td class="tf-cell-id">#{{ .ID }}</td>
-          <td>{{ .Name }}</td>
-          <td>
-            {{ if .IsActive }}<span class="badge bg-success">Activo</span>
+          <td data-label="ID" class="tf-cell-id">#{{ .ID }}</td>
+          <td data-label="Nombre">{{ .Name }}</td>
+          <td data-label="Email" class="tf-cell-email">{{ .Email }}</td>
+          <td data-label="Rol">
+            {{ if eq .Role "admin" }}<span class="badge bg-danger">Admin</span>
+            {{ else if eq .Role "moderator" }}<span class="badge bg-primary">Moderador</span>
+            {{ else }}<span class="badge bg-success">Usuario</span>{{ end }}
+          </td>
+          <td data-label="Estado">
+            {{ if .Status }}<span class="badge bg-success">Activo</span>
             {{ else }}<span class="badge bg-secondary">Inactivo</span>{{ end }}
           </td>
-          <td>
-            {{ if .LastSeen }}{{ .LastSeen.Format "02 Jan 15:04" }}{{ else }}—{{ end }}
-          </td>
-          <td class="tf-cell-actions">
-            <a href="/admin/halcones/{{ .ID }}" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
-              <i class="bi bi-eye"></i>
+          <td data-label="Acciones" class="tf-cell-actions">
+            <a href="/admin/users/{{ .ID }}/edit" class="btn btn-outline-primary btn-sm" title="Editar">
+              <svg class="icon"><use href="#i-pencil"/></svg>
             </a>
-            <a href="/admin/halcones/{{ .ID }}/assign" class="btn btn-outline-primary btn-sm" title="Asignar">
-              <i class="bi bi-person-plus"></i>
-            </a>
-            <a href="/admin/halcones/{{ .ID }}/edit" class="btn btn-outline-primary btn-sm" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </a>
-            <form method="POST" action="/admin/halcones/{{ .ID }}/delete" style="display:inline;margin:0;"
-                  onsubmit="return confirm('¿Eliminar este halcón? Se borrarán sus asignaciones.');">
+            <form method="POST" action="/admin/users/{{ .ID }}/delete" style="display:inline;margin:0;"
+                  onsubmit="return confirm('¿Eliminar este usuario? Esta acción no se puede deshacer.');">
+              <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
               <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
-                <i class="bi bi-trash"></i>
+                <svg class="icon"><use href="#i-trash"/></svg>
               </button>
             </form>
           </td>
         </tr>
         {{ else }}
         <tr>
-          <td colspan="5">
+          <td colspan="6">
             <div class="tf-empty">
-              <div class="tf-empty__icon"><i class="bi bi-broadcast"></i></div>
-              <h4>Sin halcones</h4>
-              <p>No hay halcones que coincidan con los filtros aplicados.</p>
+              <div class="tf-empty__icon" aria-hidden="true">
+                <svg class="icon"><use href="#i-inbox"/></svg>
+              </div>
+              <h4>Sin usuarios</h4>
+              <p>No hay usuarios que coincidan con los filtros aplicados.</p>
             </div>
           </td>
         </tr>
@@ -113,18 +125,17 @@
 
   {{ if gt .totalPages 1 }}
   <div class="tf-pagination-wrap">
-    <nav class="tf-pagination">
-      <a class="page-link {{ if le .page 1 }}is-disabled{{ end }}"
-         href="?page={{ sub .page 1 }}&limit={{ .limit }}&search={{ .search }}&active={{ .active }}">
-        <i class="bi bi-chevron-left"></i>
+    <nav class="tf-pagination" aria-label="Paginación">
+      <a class="page-link {{ if eq .page 1 }}is-disabled{{ end }}"
+         href="?page={{ .prevPage }}&limit={{ .limit }}&search={{ .search }}&role={{ .roleFilter }}">
+        <svg class="icon"><use href="#i-chevron-left"/></svg>
       </a>
       <span class="tf-pagination__current">Página {{ .page }} de {{ .totalPages }}</span>
-      <a class="page-link {{ if ge .page .totalPages }}is-disabled{{ end }}"
-         href="?page={{ add .page 1 }}&limit={{ .limit }}&search={{ .search }}&active={{ .active }}">
-        <i class="bi bi-chevron-right"></i>
+      <a class="page-link {{ if eq .page .totalPages }}is-disabled{{ end }}"
+         href="?page={{ .nextPage }}&limit={{ .limit }}&search={{ .search }}&role={{ .roleFilter }}">
+        <svg class="icon"><use href="#i-chevron-right"/></svg>
       </a>
     </nav>
   </div>
   {{ end }}
 </div>
-

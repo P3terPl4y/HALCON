@@ -1,10 +1,11 @@
-
 <div class="bf-main__header">
   <div>
     <h1 class="bf-main__title">Asignar halcón</h1>
     <p class="bf-main__subtitle">{{ .halcon.Name }} · Halcon #{{ .halcon.ID }}</p>
   </div>
-  <a href="/admin/halcones/{{ .halcon.ID }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+  <a href="/admin/halcones/{{ .halcon.ID }}" class="btn btn-outline-secondary">
+    <svg class="icon"><use href="#i-arrow-left"/></svg> Volver
+  </a>
 </div>
 
 <div class="tf-form-page">
@@ -16,11 +17,13 @@
           <h3>Asignación</h3>
           <p>Vincula el halcón a un usuario y paquete</p>
         </div>
-        <span class="tf-form-section__icon"><i class="bi bi-person-plus-fill"></i></span>
+        <span class="tf-form-section__icon" aria-hidden="true">
+          <svg class="icon"><use href="#i-person-plus"/></svg>
+        </span>
       </div>
       <div class="tf-form-section__body">
         <form method="POST" action="/admin/halcones/{{ .halcon.ID }}/assign">
-        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+          <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
           <div class="tf-form-row">
             <div class="tf-col-12">
               <label class="form-label">Usuario destino <span class="req">*</span></label>
@@ -42,7 +45,7 @@
           <div class="tf-actions">
             <a href="/admin/halcones/{{ .halcon.ID }}" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">
-              <i class="bi bi-check-lg"></i> Asignar halcón
+              <svg class="icon"><use href="#i-check"/></svg> Asignar halcón
             </button>
           </div>
         </form>
@@ -52,13 +55,24 @@
 
   <aside class="tf-form-page__aside">
     <div class="tf-form-aside-card">
-      <h4 class="tf-form-aside-card__title"><i class="bi bi-info-circle"></i> Importante</h4>
+      <h4 class="tf-form-aside-card__title">
+        <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+        Importante
+      </h4>
       <ul class="tf-form-aside-card__list">
-        <li><i class="bi bi-check-circle-fill"></i> Si el halcón ya estaba asignado, la asignación anterior se cierra automáticamente</li>
-        <li><i class="bi bi-check-circle-fill"></i> El usuario verá el halcón en su dashboard inmediatamente</li>
-        <li><i class="bi bi-check-circle-fill"></i> El historial de asignaciones se conserva</li>
+        <li>
+          <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
+          Si el halcón ya estaba asignado, la asignación anterior se cierra automáticamente
+        </li>
+        <li>
+          <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
+          El usuario verá el halcón en su dashboard inmediatamente
+        </li>
+        <li>
+          <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
+          El historial de asignaciones se conserva
+        </li>
       </ul>
     </div>
   </aside>
 </div>
-
