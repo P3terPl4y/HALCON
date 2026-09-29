@@ -22,45 +22,37 @@
    Paleta fría: violeta profundo + blanco + azul glaciar
    ============================================================ */
 :root {
-  /* Violeta */
   --v-950:#0a0618; --v-900:#150b2e; --v-800:#1e1247; --v-700:#2a1a5e;
   --v-600:#3a2478; --v-500:#4f3393; --v-400:#6d54c9; --v-300:#a896e6;
   --v-200:#d4c8f0; --v-100:#ede9fe;
 
-  /* Azul glaciar — acento */
   --ice-700:#0369a1; --ice-600:#0284c7; --ice-500:#0ea5e9;
   --ice-400:#38bdf8; --ice-300:#7dd3fc; --ice-100:#e0f2fe;
 
-  /* Semánticos */
   --tf-success:#10b981; --tf-success-600:#047857; --tf-success-bg:#d1fae5;
   --tf-warning:#f59e0b; --tf-warning-bg:#fef3c7;
   --tf-info:#3b82f6;    --tf-info-bg:#dbeafe;
   --tf-red-500:#ef4444; --tf-red-600:#dc2626; --tf-red-400:#f87171; --tf-red-050:#fef2f2;
   --tf-danger:var(--tf-red-500); --tf-danger-bg:var(--tf-red-050);
 
-  /* Aliases de compatibilidad */
   --tf-yellow-500:var(--ice-500);
   --tf-yellow-600:var(--ice-600);
   --tf-yellow-050:var(--ice-100);
 
-  /* Superficies */
   --tf-bg:#f8fafc;
   --tf-surface:#ffffff;
   --tf-surface-2:#f8fafc;
   --tf-surface-3:#f1f5f9;
   --tf-surface-overlay:rgba(255,255,255,0.94);
 
-  /* Texto */
   --tf-text:#0f172a;
   --tf-text-muted:#475569;
   --tf-text-subtle:#64748b;
   --tf-text-invert:#ffffff;
 
-  /* Bordes */
   --tf-border:#e2e8f0;
   --tf-border-strong:#cbd5e1;
 
-  /* Tipografía */
   --tf-font-display:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --tf-font-body:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --tf-font-mono:ui-monospace,'SFMono-Regular',Menlo,'JetBrains Mono',monospace;
@@ -142,7 +134,7 @@ body{
   background:var(--tf-bg);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  transition:background-color var(--tf-dur) var(--tf-ease),color var(--tf-dur) var(--tf-ease);
+  transition:background-color var(--tf-dur) var(--tf-ease),color var(--tf-dur) var(--tf-ease),padding-right .2s ease;
 }
 h1,h2,h3,h4,h5,h6{
   font-family:var(--tf-font-display);
@@ -209,19 +201,18 @@ a:hover{color:var(--ice-500)}
 .bf-topbar__left{display:flex;align-items:center;min-width:0;gap:12px}
 .bf-topbar__right{display:flex;align-items:center;gap:6px;justify-content:flex-end}
 
-/* ============================================================
-   Brand — logo reemplazable
-   ============================================================ */
+/* Brand — logo reemplazable */
 .bf-brand{
-  display:inline-flex;align-items:center;
+  display:inline-flex;
+  align-items:center;
   height:44px;
-  padding:4px 12px;
-  border-left:3px solid var(--ice-500);
-  border-radius:0 10px 10px 0;
+  padding:4px 10px;
+  border-radius:0 8px 8px 0;
   text-decoration:none;
+  border-left:3px solid var(--ice-500);
   /* Placeholder visible mientras no exista /img/logo.svg */
   background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(109,84,201,.08));
-  transition:background-color .15s ease;
+  transition:background-color .15s ease,border-color .15s ease;
 }
 .bf-brand:hover{
   background:linear-gradient(135deg,rgba(56,189,248,.14),rgba(109,84,201,.14));
@@ -242,7 +233,7 @@ a:hover{color:var(--ice-500)}
   font-weight:500;
   min-width:0;
 }
-.bf-topbar__context i,.bf-topbar__context .icon{color:var(--ice-500);width:14px;height:14px}
+.bf-topbar__context .icon{color:var(--ice-500);width:14px;height:14px}
 .bf-topbar__context strong{color:var(--tf-text);font-weight:600}
 
 /* Botones del topbar */
@@ -340,13 +331,14 @@ a:hover{color:var(--ice-500)}
 }
 [data-theme="dark"] .bf-sidebar{background:#06040f}
 
-/* Sidebar brand */
+/* Brand en sidebar */
 .bf-sidebar__brand{
   display:flex;
   justify-content:center;
   padding:0 8px 16px;
   margin-bottom:8px;
   border-bottom:1px solid rgba(255,255,255,.08);
+  flex-shrink:0;
 }
 .bf-sidebar__brand a{
   display:inline-flex;
@@ -355,7 +347,7 @@ a:hover{color:var(--ice-500)}
   padding:8px 14px;
   border-radius:10px;
   width:100%;
-  /* Placeholder visible mientras no exista /img/logo.svg */
+  text-decoration:none;
   background:linear-gradient(135deg,rgba(56,189,248,.10),rgba(109,84,201,.10));
   transition:background-color .15s ease;
 }
@@ -439,11 +431,31 @@ a:hover{color:var(--ice-500)}
   font-size:.72rem;
   color:var(--v-300);
   display:flex;align-items:center;gap:8px;
+  flex-shrink:0;
 }
 .bf-sidebar__status-dot{
   width:7px;height:7px;border-radius:50%;
   background:var(--tf-success);
   box-shadow:0 0 0 3px rgba(16,185,129,.2);
+}
+
+/* --- Backdrop para sidebar móvil --- */
+.bf-sidebar-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:999;
+  background:rgba(10,6,24,.65);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity 240ms ease,visibility 240ms ease;
+}
+.bf-sidebar-backdrop.is-open{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
 }
 
 /* --- MAIN --- */
@@ -470,7 +482,7 @@ a:hover{color:var(--ice-500)}
 .bf-main__subtitle{margin:.25rem 0 0;color:var(--tf-text-muted);font-size:var(--tf-fs-sm)}
 
 /* ============================================================
-   Componentes — Cards
+   Componentes
    ============================================================ */
 .card{
   background:var(--tf-surface);
@@ -478,7 +490,6 @@ a:hover{color:var(--ice-500)}
   border-radius:var(--tf-radius-md);
   box-shadow:var(--tf-shadow-xs);
   overflow:hidden;
-  transition:background-color var(--tf-dur) var(--tf-ease),border-color var(--tf-dur) var(--tf-ease);
 }
 .card-header{
   padding:.9rem 1.1rem;
@@ -498,9 +509,7 @@ a:hover{color:var(--ice-500)}
 .card-header h5 .icon{color:var(--ice-500);width:18px;height:18px}
 .card-body{padding:1.1rem}
 
-/* ============================================================
-   Botones
-   ============================================================ */
+/* Botones */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
   padding:.65rem 1.1rem;
@@ -552,9 +561,7 @@ a:hover{color:var(--ice-500)}
 .btn-lg{padding:.8rem 1.5rem;font-size:var(--tf-fs-base)}
 .btn-block{width:100%}
 
-/* ============================================================
-   Formularios
-   ============================================================ */
+/* Formularios */
 .form-control,.form-select{
   width:100%;
   min-height:42px;
@@ -603,9 +610,7 @@ a:hover{color:var(--ice-500)}
   line-height:1.4;margin-top:4px;
 }
 
-/* ============================================================
-   Badges / Alerts
-   ============================================================ */
+/* Badges / Alerts */
 .badge{
   display:inline-flex;align-items:center;gap:.3em;
   padding:.32em .7em;
@@ -639,9 +644,7 @@ a:hover{color:var(--ice-500)}
 .alert-danger{background:var(--tf-danger-bg);color:var(--tf-red-600);border-color:rgba(239,68,68,.3)}
 .alert-danger::before{background:var(--tf-red-500)}
 
-/* ============================================================
-   Empty state
-   ============================================================ */
+/* Empty state */
 .tf-empty{
   padding:3rem 1rem;
   text-align:center;
@@ -659,9 +662,7 @@ a:hover{color:var(--ice-500)}
 .tf-empty h4{margin:0;font-family:var(--tf-font-display);font-size:var(--tf-fs-md);font-weight:700}
 .tf-empty p{margin:0;color:var(--tf-text-muted);font-size:var(--tf-fs-sm);max-width:380px}
 
-/* ============================================================
-   Utilidades
-   ============================================================ */
+/* Utilidades */
 .tf-flex{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
 .tf-flex--between{display:flex;gap:.75rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .tf-w-full{width:100%}
@@ -671,9 +672,7 @@ a:hover{color:var(--ice-500)}
 .tf-check{display:flex;align-items:center;gap:.5rem}
 .tf-check input[type="checkbox"]{width:16px;height:16px;accent-color:var(--ice-500);cursor:pointer}
 
-/* ============================================================
-   Stats (tf-home-stats)
-   ============================================================ */
+/* Stats */
 .tf-home-stats{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));
@@ -723,9 +722,7 @@ a:hover{color:var(--ice-500)}
   font-variant-numeric:tabular-nums;
 }
 
-/* ============================================================
-   Filters
-   ============================================================ */
+/* Filters */
 .tf-filters{
   background:var(--tf-surface);
   border:1px solid var(--tf-border);
@@ -745,9 +742,7 @@ a:hover{color:var(--ice-500)}
 }
 .tf-filters__actions .btn{min-width:120px}
 
-/* ============================================================
-   Table
-   ============================================================ */
+/* Table */
 .tf-table-card{
   background:var(--tf-surface);
   border:1px solid var(--tf-border);
@@ -859,9 +854,7 @@ a:hover{color:var(--ice-500)}
   min-width:120px;text-align:center;
 }
 
-/* ============================================================
-   Form page (dos columnas: form + aside)
-   ============================================================ */
+/* Form page (form + aside) */
 .tf-form-page{
   display:grid;
   grid-template-columns:minmax(0,1fr) var(--tf-aside-width);
@@ -929,14 +922,13 @@ a:hover{color:var(--ice-500)}
   .tf-col-6,.tf-col-4,.tf-col-3{grid-column:span 12}
 }
 
-/* Form block (icono + texto + body) */
+/* Form block */
 .tf-form-block{
   background:var(--tf-surface);
   border:1px solid var(--tf-border);
   border-radius:12px;
   box-shadow:var(--tf-shadow-xs);
   overflow:hidden;
-  transition:background-color var(--tf-dur) ease,border-color var(--tf-dur) ease;
 }
 .tf-form-block__head{
   display:grid;
@@ -1024,7 +1016,7 @@ a:hover{color:var(--ice-500)}
   color:var(--ice-600);
 }
 
-/* Rail card (usado en dashboard) */
+/* Rail card */
 .tf-rail-card{
   background:var(--tf-surface);
   border:1px solid var(--tf-border);
@@ -1043,9 +1035,7 @@ a:hover{color:var(--ice-500)}
 .tf-rail-card--actions{gap:.5rem}
 .tf-rail-card--actions .btn{width:100%}
 
-/* ============================================================
-   Info block (show.html)
-   ============================================================ */
+/* Info block */
 .tf-info-block{
   background:var(--tf-surface);
   border:1px solid var(--tf-border);
@@ -1104,9 +1094,7 @@ a:hover{color:var(--ice-500)}
   color:var(--tf-text);word-break:break-word;
 }
 
-/* ============================================================
-   Profile layout (show.html — 2 col)
-   ============================================================ */
+/* Profile layout */
 .tf-profile__layout{
   display:grid;
   grid-template-columns:minmax(0,1fr) var(--tf-aside-width);
@@ -1115,9 +1103,7 @@ a:hover{color:var(--ice-500)}
 }
 @media(max-width:1024px){.tf-profile__layout{grid-template-columns:1fr}}
 
-/* ============================================================
-   Map
-   ============================================================ */
+/* Map */
 #admin-map,#profile-map{
   width:100%;height:560px;
   background:var(--tf-surface-3);
@@ -1218,35 +1204,8 @@ a:hover{color:var(--ice-500)}
 .tf-halcon-pin--idle{background:#94a3b8}
 
 /* ============================================================
-   Responsive
+   RESPONSIVE — Tabla → cards en móvil
    ============================================================ */
-@media(max-width:1024px){
-  .bf-body{grid-template-columns:1fr}
-  .bf-sidebar{
-    position:fixed;top:0;left:0;
-    width:var(--bf-sidebar-w);
-    height:100vh;
-    z-index:60;
-    transform:translateX(-100%);
-    transition:transform 240ms cubic-bezier(.4,0,.2,1);
-  }
-  .bf-sidebar.is-open{transform:translateX(0)}
-}
-
-@media(max-width:768px){
-  .bf-user-btn__info{display:none}
-  .bf-topbar{padding:0 12px;gap:8px}
-  .bf-brand{padding:2px 8px}
-  .bf-topbar__context{font-size:.78rem}
-}
-
-@media(max-width:640px){
-  .bf-main{padding:1rem}
-  .bf-main__header{flex-direction:column;align-items:stretch}
-  .bf-main__header .btn{width:100%}
-}
-
-/* Table → cards en móvil */
 @media(max-width:720px){
   .table-responsive{overflow-x:visible;padding:12px}
   .tf-table,.tf-table tbody,.tf-table tr,.tf-table td{display:block;width:100%}
@@ -1277,7 +1236,7 @@ a:hover{color:var(--ice-500)}
 }
 
 /* ============================================================
-   Offline banner
+   OFFLINE BANNER
    ============================================================ */
 .bf-offline{
   position:fixed;top:var(--bf-topbar-h);left:0;right:0;z-index:90;
@@ -1292,8 +1251,59 @@ a:hover{color:var(--ice-500)}
 .bf-offline .icon{width:18px;height:18px}
 @keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
 
+/* ============================================================
+   MOBILE / TABLET — Sidebar como panel flotante por encima de TODO
+   ============================================================ */
+@media(max-width:1024px){
+  .bf-body{grid-template-columns:1fr}
+
+  .bf-sidebar{
+    position:fixed;
+    top:0;
+    left:0;
+    width:min(280px, 85vw);
+    height:100dvh;          /* dynamic viewport: se ajusta con la barra del navegador */
+    max-height:100vh;
+    z-index:1000;           /* Por encima del topbar (100) y del offline banner (90) */
+    padding:20px 10px;
+    border-right:1px solid rgba(255,255,255,.08);
+    transform:translateX(-100%);
+    transition:transform 260ms cubic-bezier(.4,0,.2,1);
+    overflow-y:auto;
+    box-shadow:8px 0 32px rgba(10,6,24,.35);
+    will-change:transform;
+  }
+
+  .bf-sidebar.is-open{
+    transform:translateX(0);
+  }
+
+  /* Cuando el sidebar está abierto, evita que el fondo haga scroll */
+  body.bf-sidebar-locked{
+    overflow:hidden;
+  }
+
+  /* En el sidebar móvil el header decorativo sobra */
+  .bf-sidebar__header{
+    display:none;
+  }
+
+  /* El footer del sidebar queda pegado al fondo */
+  .bf-sidebar__footer{
+    margin-top:auto;
+  }
+}
+
+/* Ocultar el backdrop en desktop (nunca se muestra) */
+@media(min-width:1025px){
+  .bf-sidebar-backdrop{
+    display:none !important;
+  }
+}
+
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  .bf-sidebar{transition:none}
 }
 </style>
 </head>
@@ -1302,7 +1312,7 @@ a:hover{color:var(--ice-500)}
 <a class="skip-link" href="#main">Saltar al contenido</a>
 
 <!-- ══════════════════════════════════════════════════════════════
-     Sprite SVG — reemplaza el CDN de Bootstrap Icons
+     Sprite SVG
      ══════════════════════════════════════════════════════════════ -->
 <svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -1312,42 +1322,18 @@ a:hover{color:var(--ice-500)}
 <symbol id="i-people" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
 <symbol id="i-person-badge" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 11l2 2 4-4"/></symbol>
 <symbol id="i-shield-lock" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="12" r="2"/><path d="M12 14v3"/></symbol>
-<symbol id="i-person-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></symbol>
-<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-<symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
-<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
-<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></symbol>
-<symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
-<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
-<symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
-<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
-<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
-<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
-<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
-<symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="m9 12 2 2 4-4" stroke="#fff"/></symbol>
-<symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="3.5"/><path d="m21 2-9.6 9.6M15.5 7.5 19 11"/></symbol>
-<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
-<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
-<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
-<symbol id="i-graph-up" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></symbol>
-<symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/></symbol>
-<symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol>
-<symbol id="i-geo-alt" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></symbol>
-<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
-<symbol id="i-hash" viewBox="0 0 24 24"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></symbol>
-<symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/></symbol>
-<symbol id="i-toggle" viewBox="0 0 24 24"><rect x="1" y="6" width="22" height="12" rx="6"/><circle cx="17" cy="12" r="3" fill="currentColor" stroke="none"/></symbol>
-<symbol id="i-person" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
 <symbol id="i-person-gear" viewBox="0 0 24 24"><circle cx="10" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="18" r="3"/><path d="M19 14v1M19 21v1M15 18h1M22 18h1M15.5 14.5l.7.7M21.8 20.8l.7.7M22.5 14.5l-.7.7M15.5 21.5l.7-.7"/></symbol>
 <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></symbol>
+<symbol id="i-geo-alt" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
 <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
 <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
 <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="m1 1 22 22"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
 <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
-<symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7zM2 17l10 5 10-5M2 12l10 5 10-5"/></symbol>
 </defs>
 </svg>
 
@@ -1362,11 +1348,13 @@ a:hover{color:var(--ice-500)}
   <!-- ══ TOPBAR ══ -->
   <header class="bf-topbar" id="bfTopbar">
     <div class="bf-topbar__left">
-      <button class="bf-icon-btn" id="btnBurger" aria-label="Abrir menú" aria-expanded="false" style="display:none">
-        <svg class="icon"><use href="#i-menu"/></svg>
+      <button class="bf-icon-btn" id="btnBurger"
+              aria-label="Abrir menú" aria-expanded="false"
+              aria-controls="bfSidebar" style="display:none">
+        <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
       </button>
       <a href="/" class="bf-brand" aria-label="HALCON · Inicio">
-        <img src="/img/halcon.svg" alt="HALCON" class="bf-brand__logo" width="180" height="40">
+        <img src="/img/logo.svg" alt="HALCON" class="bf-brand__logo" width="180" height="40">
       </a>
     </div>
 
@@ -1377,11 +1365,11 @@ a:hover{color:var(--ice-500)}
 
     <div class="bf-topbar__right">
       <button class="bf-icon-btn" aria-label="Notificaciones">
-        <svg class="icon"><use href="#i-bell"/></svg>
+        <svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg>
         <span class="bf-icon-btn__badge" aria-hidden="true">3</span>
       </button>
       <button class="bf-icon-btn" aria-label="Ayuda">
-        <svg class="icon"><use href="#i-help"/></svg>
+        <svg class="icon" aria-hidden="true"><use href="#i-help"/></svg>
       </button>
       <button class="bf-theme-toggle" id="themeToggle" aria-label="Cambiar tema" aria-pressed="false">
         <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
@@ -1402,15 +1390,15 @@ a:hover{color:var(--ice-500)}
 
   <!-- ══ BODY ══ -->
   <div class="bf-body">
+
+    <!-- ══ SIDEBAR ══ -->
     <aside class="bf-sidebar" id="bfSidebar" aria-label="Navegación principal">
+
+      <!-- Logo de marca (opcional, refuerza identidad en el panel oscuro) -->
       <div class="bf-sidebar__brand">
         <a href="/" aria-label="HALCON · Inicio">
           <img src="/img/logo.svg" alt="HALCON" class="bf-sidebar__logo" width="140" height="32">
         </a>
-      </div>
-
-      <div class="bf-sidebar__header">
-        <span class="bf-sidebar__title">Navegación</span>
       </div>
 
       <nav class="bf-sidebar__nav">
@@ -1466,6 +1454,10 @@ a:hover{color:var(--ice-500)}
       </div>
     </aside>
 
+    <!-- Backdrop para sidebar móvil (click para cerrar) -->
+    <div class="bf-sidebar-backdrop" id="bfSidebarBackdrop" aria-hidden="true"></div>
+
+    <!-- ══ MAIN ══ -->
     <main class="bf-main" id="main">
       <div class="container">
         {{ embed }}
@@ -1479,77 +1471,159 @@ a:hover{color:var(--ice-500)}
 (function(){
   'use strict';
 
-  /* Tema */
-  var root=document.documentElement;
-  var btn=document.getElementById('themeToggle');
+  /* ============================================================
+     TEMA
+     ============================================================ */
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('themeToggle');
+
   function apply(theme){
-    root.setAttribute('data-theme',theme);
-    if(btn) btn.setAttribute('aria-pressed', theme==='dark' ? 'true' : 'false');
+    root.setAttribute('data-theme', theme);
+    if(themeBtn) themeBtn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
   }
+
   try{
-    var saved=localStorage.getItem('halcon-theme');
-    var prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
-    apply(saved||(prefersDark?'dark':'light'));
+    var saved = localStorage.getItem('halcon-theme');
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    apply(saved || (prefersDark ? 'dark' : 'light'));
   }catch(e){}
-  if(btn){
-    btn.addEventListener('click',function(){
-      var cur=root.getAttribute('data-theme')==='dark'?'dark':'light';
-      var next=cur==='dark'?'light':'dark';
+
+  if(themeBtn){
+    themeBtn.addEventListener('click', function(){
+      var cur = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      var next = cur === 'dark' ? 'light' : 'dark';
       apply(next);
-      try{localStorage.setItem('halcon-theme',next);}catch(e){}
+      try{ localStorage.setItem('halcon-theme', next); }catch(e){}
     });
   }
 
-  /* Sidebar móvil */
-  var sidebar=document.getElementById('bfSidebar');
-  var burger=document.getElementById('btnBurger');
+  /* ============================================================
+     SIDEBAR MÓVIL
+     Panel flotante por encima de todo. Backdrop + scroll lock.
+     ============================================================ */
+  var sidebar  = document.getElementById('bfSidebar');
+  var backdrop = document.getElementById('bfSidebarBackdrop');
+  var burger   = document.getElementById('btnBurger');
+  var body     = document.body;
+
+  function isMobile(){
+    return window.innerWidth <= 1024;
+  }
+
+  function lockBodyScroll(){
+    var sw = window.innerWidth - document.documentElement.clientWidth;
+    if(sw > 0) body.style.paddingRight = sw + 'px';
+    body.classList.add('bf-sidebar-locked');
+  }
+
+  function unlockBodyScroll(){
+    body.style.paddingRight = '';
+    body.classList.remove('bf-sidebar-locked');
+  }
+
+  function openSidebar(){
+    if(!sidebar || !burger) return;
+    if(sidebar.classList.contains('is-open')) return;
+
+    sidebar.classList.add('is-open');
+    if(backdrop) backdrop.classList.add('is-open');
+    burger.setAttribute('aria-expanded', 'true');
+    burger.setAttribute('aria-label', 'Cerrar menú');
+
+    if(isMobile()) lockBodyScroll();
+  }
+
+  function closeSidebar(){
+    if(!sidebar || !burger) return;
+    if(!sidebar.classList.contains('is-open')) return;
+
+    sidebar.classList.remove('is-open');
+    if(backdrop) backdrop.classList.remove('is-open');
+    burger.setAttribute('aria-expanded', 'false');
+    burger.setAttribute('aria-label', 'Abrir menú');
+
+    unlockBodyScroll();
+  }
+
+  /* Botón hamburguesa */
+  if(burger){
+    burger.addEventListener('click', function(){
+      if(sidebar.classList.contains('is-open')) closeSidebar();
+      else openSidebar();
+    });
+  }
+
+  /* Cerrar al hacer click en el backdrop */
+  if(backdrop){
+    backdrop.addEventListener('click', closeSidebar);
+  }
+
+  /* Cerrar al presionar Escape */
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && sidebar && sidebar.classList.contains('is-open')){
+      closeSidebar();
+    }
+  });
+
+  /* Cerrar al hacer click en cualquier link del sidebar (en móvil) */
+  if(sidebar){
+    sidebar.querySelectorAll('a').forEach(function(link){
+      link.addEventListener('click', function(){
+        if(isMobile()) closeSidebar();
+      });
+    });
+  }
+
+  /* Cerrar si el viewport pasa a desktop con el sidebar abierto */
+  var mq = window.matchMedia('(min-width:1025px)');
+  var onMQ = function(e){
+    if(e.matches && sidebar && sidebar.classList.contains('is-open')){
+      closeSidebar();
+    }
+  };
+  if(mq.addEventListener) mq.addEventListener('change', onMQ);
+  else if(mq.addListener) mq.addListener(onMQ);
+
+  /* Mostrar/ocultar el botón hamburguesa según breakpoint */
   function checkBreakpoint(){
-    if(window.innerWidth<=1024){
-      if(burger) burger.style.display='grid';
-      if(sidebar && !sidebar.classList.contains('is-open')) sidebar.style.transform='';
+    if(!burger) return;
+    if(window.innerWidth <= 1024){
+      burger.style.display = 'grid';
     } else {
-      if(burger) burger.style.display='none';
-      if(sidebar){ sidebar.classList.remove('is-open'); sidebar.style.transform=''; }
+      burger.style.display = 'none';
     }
   }
   checkBreakpoint();
-  window.addEventListener('resize',checkBreakpoint);
-  if(burger){
-    burger.addEventListener('click',function(){
-      var open=sidebar.classList.toggle('is-open');
-      burger.setAttribute('aria-expanded',open?'true':'false');
-    });
-  }
-  document.addEventListener('click',function(e){
-    if(window.innerWidth>1024) return;
-    if(!sidebar.classList.contains('is-open')) return;
-    if(sidebar.contains(e.target)||burger.contains(e.target)) return;
-    sidebar.classList.remove('is-open');
-    burger.setAttribute('aria-expanded','false');
-  });
+  window.addEventListener('resize', checkBreakpoint);
 
-  /* Topbar scroll shadow */
-  var topbar=document.getElementById('bfTopbar');
-  window.addEventListener('scroll',function(){
-    if(topbar) topbar.classList.toggle('is-scrolled', window.scrollY>4);
-  },{passive:true});
+  /* ============================================================
+     TOPBAR — sombra al scroll
+     ============================================================ */
+  var topbar = document.getElementById('bfTopbar');
+  window.addEventListener('scroll', function(){
+    if(topbar) topbar.classList.toggle('is-scrolled', window.scrollY > 4);
+  }, { passive: true });
 
-  /* Offline banner */
-  var offline=document.getElementById('bfOffline');
+  /* ============================================================
+     OFFLINE BANNER
+     ============================================================ */
+  var offline = document.getElementById('bfOffline');
   function updateOnline(){
     if(offline) offline.classList.toggle('is-visible', !navigator.onLine);
   }
-  window.addEventListener('online',updateOnline);
-  window.addEventListener('offline',updateOnline);
+  window.addEventListener('online', updateOnline);
+  window.addEventListener('offline', updateOnline);
   updateOnline();
 
-  /* Marcar link activo del sidebar */
-  var path=location.pathname;
+  /* ============================================================
+     Marcar link activo del sidebar
+     ============================================================ */
+  var path = location.pathname;
   document.querySelectorAll('.bf-sidebar__link').forEach(function(link){
-    var href=link.getAttribute('href');
-    if(!href||href==='/') return;
-    if(path===href||path.indexOf(href+'/')===0){
-      link.setAttribute('aria-current','page');
+    var href = link.getAttribute('href');
+    if(!href || href === '/') return;
+    if(path === href || path.indexOf(href + '/') === 0){
+      link.setAttribute('aria-current', 'page');
     }
   });
 })();
