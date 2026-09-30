@@ -1,10 +1,10 @@
 package middlewares
 
 import (
+	"github.com/gofiber/fiber/v3"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"log"
-	"github.com/gofiber/fiber/v3"
 )
 
 func ModeratorMiddleware() fiber.Handler {

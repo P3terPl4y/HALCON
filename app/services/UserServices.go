@@ -3,10 +3,12 @@ package services
 import (
 	"errors"
 	"fmt"
-	"log"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/requests"
+	"log"
+	"net/mail"
+	"strings"
 
 	"github.com/goravel/framework/contracts/database/orm"
 	"golang.org/x/crypto/bcrypt"
@@ -42,7 +44,7 @@ func (s *UserService) GetAll(page, limit int) ([]models.User, int64, error) {
 // GetByID obtiene un usuario por ID.
 func (s *UserService) GetByID(id uint) (*models.User, error) {
 	var user models.User
-	if err := facades.Orm().Query().Where("id = ?", id).First(&user); err != nil {
+	if err := facades.Orm().Query().Where("id = ?", id).FirstOrFail(&user); err != nil {
 		return nil, errors.New("usuario no encontrado")
 	}
 	return &user, nil
@@ -51,6 +53,16 @@ func (s *UserService) GetByID(id uint) (*models.User, error) {
 // CreateUserWithRole crea un usuario con el rol indicado.
 // Ya no crea perfiles de Driver/Client: el rol vive directamente en User.
 func (s *UserService) CreateUserWithRole(req *requests.CreateUserRequest) (*models.User, error) {
+	req.Name = strings.TrimSpace(req.Name)
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+	req.Phone = strings.TrimSpace(req.Phone)
+	address, err := mail.ParseAddress(req.Email)
+	if len([]rune(req.Name)) < 2 || len(req.Name) > 100 || err != nil || address.Address != req.Email || len(req.Email) > 254 || req.Phone == "" || len(req.Phone) > 40 || len(req.Password) < 8 || len(req.Password) > 72 {
+		return nil, errors.New("nombre, correo y teléfono válidos y contraseña de 8 a 72 caracteres son obligatorios")
+	}
+	if req.Role != "user" && req.Role != "moderator" && req.Role != "admin" {
+		return nil, errors.New("rol inválido")
+	}
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
@@ -66,7 +78,7 @@ func (s *UserService) CreateUserWithRole(req *requests.CreateUserRequest) (*mode
 	}
 
 	if err := facades.Orm().Query().Create(&user); err != nil {
-		log.Printf("Error al crear usuario: ",err)
+		log.Printf("Error al crear usuario: %v", err)
 		return nil, fmt.Errorf("crear usuario: %w", err)
 	}
 	return &user, nil

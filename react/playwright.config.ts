@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test'
+export default defineConfig({testDir:'./tests',workers:1,timeout:45000,use:{baseURL:process.env.HALCON_FRONTEND_URL||'http://127.0.0.1:5173',trace:'retain-on-failure',screenshot:'only-on-failure',launchOptions:{...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{}),args:['--no-sandbox']}},reporter:[['list'],['json',{outputFile:'test-results/results.json'}]]})

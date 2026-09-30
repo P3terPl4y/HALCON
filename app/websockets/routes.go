@@ -1,72 +1,63 @@
 package websocket
 
 import (
-	"log"
-
-	"goravel/app/services"
-
+	"context"
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
+	"goravel/app/http/middlewares"
+	"goravel/app/services"
+	"net/url"
+	"strings"
+	"time"
 )
 
-func RegisterRoutes(app *fiber.App, hub *Hub) {
-	halconService := services.NewHalconService()
-
-	// --- Halcones: upgrade sin auth de sesión (usan token) ---
-	app.Use("/halcon", func(c fiber.Ctx) error {
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
-		}
-		return fiber.ErrUpgradeRequired
-	})
-
-	// --- Dashboard: aquí sí hay fiber.Ctx, así que la sesión funciona ---
-	app.Use("/dashboard", func(c fiber.Ctx) error {
+func RegisterRoutes(app *fiber.App, hub *Hub, store *session.Store) {
+	service := services.NewHalconService()
+	authenticated := func(c fiber.Ctx) error {
 		if !websocket.IsWebSocketUpgrade(c) {
 			return fiber.ErrUpgradeRequired
 		}
-
+		origin, err := url.Parse(c.Get("Origin"))
+		if err != nil || origin.Host != c.Get("Host") || origin.Scheme != c.Scheme() || origin.User != nil || origin.Path != "" || origin.RawQuery != "" || origin.Fragment != "" {
+			return fiber.ErrForbidden
+		}
 		sess := session.FromContext(c)
 		if sess == nil {
-			log.Println("❌ WS dashboard[middleware]: session.FromContext devolvió nil")
 			return fiber.ErrUnauthorized
 		}
-
-		raw := sess.Get("user_id")
-		if raw == nil {
-			log.Println("❌ WS dashboard[middleware]: user_id no está en la sesión")
+		uid, ok := middlewares.SessionUserID(sess.Get("user_id"))
+		if !ok || store == nil {
 			return fiber.ErrUnauthorized
 		}
-
-		var uid uint
-		switch v := raw.(type) {
-		case uint:
-			uid = v
-		case int:
-			uid = uint(v)
-		case int64:
-			uid = uint(v)
-		case float64:
-			uid = uint(v)
-		default:
-			log.Printf("❌ WS dashboard[middleware]: tipo no soportado %T", raw)
+		u, err := services.NewUserService().GetByID(uid)
+		if err != nil || !u.Status {
 			return fiber.ErrUnauthorized
 		}
-
-		// ESTA línea es la que salva todo:
-		// el wrapper websocket.New copia c.Locals() al *websocket.Conn
 		c.Locals("user_id", uid)
-		c.Locals("allowed", true)
-
-		log.Printf("✅ WS dashboard[middleware]: sesión OK, user_id=%d", uid)
+		c.Locals("session_expires", time.Now().Add(30*time.Minute))
+		if store != nil {
+			sessionID := strings.Clone(sess.ID())
+			c.Locals("session_valid", func() bool {
+				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+				defer cancel()
+				saved, err := store.GetByID(ctx, sessionID)
+				if err != nil {
+					return false
+				}
+				defer saved.Release()
+				storedID, ok := middlewares.SessionUserID(saved.Get("user_id"))
+				return ok && storedID == uid
+			})
+		}
 		return c.Next()
-	})
-
-	app.Get("/halcon/:id_user/:id_halcon/",
-		websocket.New(HandleHalcon(hub, halconService)))
-
-	app.Get("/dashboard/:id_user/",
-		websocket.New(HandleDashboard(hub, halconService)))
+	}
+	app.Get("/location", authenticated, websocket.New(HandlePersonal(hub, service)))
+	app.Get("/dashboard/:id_user/", authenticated, websocket.New(HandleDashboard(hub, service)))
+	app.Get("/halcon/:id_user/:id_halcon/", func(c fiber.Ctx) error {
+		if !websocket.IsWebSocketUpgrade(c) {
+			return fiber.ErrUpgradeRequired
+		}
+		return c.Next()
+	}, websocket.New(HandleHalcon(hub, service)))
 }

@@ -3,13 +3,13 @@ package controllers
 import (
 	"log"
 
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/csrf"
+	"golang.org/x/crypto/bcrypt"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/requests"
 	"goravel/app/services"
-"github.com/gofiber/fiber/v3/middleware/csrf"
-	"github.com/gofiber/fiber/v3"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserController struct {
@@ -43,7 +43,7 @@ func (c *UserController) Index(ctx fiber.Ctx) error {
 		"users": users,
 		"total": total,
 		"page":  page,
-		"limit": limit,"csrfToken":    csrf.TokenFromContext(ctx),
+		"limit": limit, "csrfToken": csrf.TokenFromContext(ctx),
 	})
 }
 
@@ -59,22 +59,32 @@ func (c *UserController) Show(ctx fiber.Ctx) error {
 		log.Printf("Error al obtener perfil: %v", err)
 		return ctx.Render("auth/login", fiber.Map{
 			"title":       "Iniciar sesión",
-			"flash_error": "Usuario no encontrado","csrfToken":    csrf.TokenFromContext(ctx),
+			"flash_error": "Usuario no encontrado", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
 	// Obtener halcones asignados al usuario
 	halconService := services.NewHalconService()
-	halcones, err := halconService.GetByAssignedUserID(userID)
+	halcones, err := halconService.VisibleTo(userID)
 	if err != nil {
 		log.Printf("Error al obtener halcones: %v", err)
-		halcones = []models.Halcon{}
+		return fiber.ErrInternalServerError
 	}
 
+	personal, err := halconService.EnsurePersonal(userID)
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+	var recipient *models.User
+	if personal.RecipientID != nil {
+		recipient, _ = c.userService.GetByID(*personal.RecipientID)
+	}
 	return ctx.Render("profile/show", fiber.Map{
+		"recipient": recipient, "shareSuccess": ctx.Query("ok") == "destinatario",
+		"personal": personal, "shareError": ctx.Query("error"),
 		"title":    "Mi Perfil",
 		"user":     user,
-		"halcones": halcones,"csrfToken":    csrf.TokenFromContext(ctx),
+		"halcones": halcones, "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -90,13 +100,13 @@ func (c *UserController) Edit(ctx fiber.Ctx) error {
 		log.Printf("Error al obtener perfil: %v", err)
 		return ctx.Render("profile/edit", fiber.Map{
 			"title":       "Editar Perfil",
-			"flash_error": "Usuario no encontrado","csrfToken":    csrf.TokenFromContext(ctx),
+			"flash_error": "Usuario no encontrado", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
 	return ctx.Render("profile/edit", fiber.Map{
 		"title": "Editar Perfil",
-		"user":  user,"csrfToken":    csrf.TokenFromContext(ctx),
+		"user":  user, "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -117,7 +127,7 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 		return ctx.Render("profile/edit", fiber.Map{
 			"title":       "Editar Perfil",
 			"flash_error": "Datos inválidos",
-			"user":        user,"csrfToken":    csrf.TokenFromContext(ctx),
+			"user":        user, "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -136,7 +146,7 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 			return ctx.Render("profile/edit", fiber.Map{
 				"title":       "Editar Perfil",
 				"flash_error": "El email ya está registrado",
-				"user":        user,"csrfToken":    csrf.TokenFromContext(ctx),
+				"user":        user, "csrfToken": csrf.TokenFromContext(ctx),
 			}, "layouts/base")
 		}
 		updates["email"] = req.Email
@@ -148,7 +158,7 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 			return ctx.Render("profile/edit", fiber.Map{
 				"title":       "Editar Perfil",
 				"flash_error": "Error al procesar la contraseña",
-				"user":        user,"csrfToken":    csrf.TokenFromContext(ctx),
+				"user":        user, "csrfToken": csrf.TokenFromContext(ctx),
 			}, "layouts/base")
 		}
 		updates["password"] = string(hashed)
@@ -160,11 +170,10 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 			return ctx.Render("profile/edit", fiber.Map{
 				"title":       "Editar Perfil",
 				"flash_error": "Error al actualizar el perfil",
-				"user":        user,"csrfToken":    csrf.TokenFromContext(ctx),
+				"user":        user, "csrfToken": csrf.TokenFromContext(ctx),
 			}, "layouts/base")
 		}
 	}
 
 	return ctx.Redirect().To("/profile")
 }
-

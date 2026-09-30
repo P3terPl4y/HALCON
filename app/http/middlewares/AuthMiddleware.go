@@ -1,48 +1,45 @@
 package middlewares
 
 import (
-	"goravel/app/facades"
-"log"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
+	"goravel/app/services"
+	"log"
+	"strings"
 )
 
 func AuthMiddleware() fiber.Handler {
 	return func(ctx fiber.Ctx) error {
+		unauthenticated := func() error {
+			if strings.HasPrefix(ctx.Path(), "/api/") {
+				return ctx.Status(401).JSON(fiber.Map{"error": "Inicia sesión para continuar."})
+			}
+			return ctx.Redirect().To("/login")
+		}
 		sess := session.FromContext(ctx)
 		if sess == nil {
 			log.Printf("AuthMiddleware - Sesión nil en %s", ctx.Path())
-			return ctx.Redirect().To("/login")
+			return unauthenticated()
 		}
 
 		userID := sess.Get("user_id")
 		if userID == nil {
 			log.Printf("AuthMiddleware - user_id no encontrado en sesión para %s", ctx.Path())
-			return ctx.Redirect().To("/login")
+			return unauthenticated()
 		}
 
-		// Convertir a uint (Fiber serializa como int64/float64 según el store).
-		var uid uint
-		switch v := userID.(type) {
-		case uint:
-			uid = v
-		case int:
-			uid = uint(v)
-		case int64:
-			uid = uint(v)
-		case float64:
-			uid = uint(v)
-		default:
-			facades.Log().Errorf("AuthMiddleware - Tipo de user_id no soportado: %T", userID)
-			return ctx.Redirect().To("/login")
+		uid, ok := SessionUserID(userID)
+		if !ok {
+			return unauthenticated()
 		}
 
+		user, err := services.NewUserService().GetByID(uid)
+		if err != nil || !user.Status {
+			return fiber.ErrUnauthorized
+		}
+		ctx.Locals("role", user.Role)
 		ctx.Locals("user_id", uid)
 		log.Printf("AuthMiddleware - Usuario autenticado: %d, Path: %s", uid, ctx.Path())
-
-		if role, ok := sess.Get("role").(string); ok {
-			ctx.Locals("role", role)
-		}
 
 		return ctx.Next()
 	}

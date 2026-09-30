@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	"strconv"
-	"strings"
-"log"
 	"goravel/app/requests"
 	"goravel/app/services"
+	"log"
+	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/csrf"
@@ -30,7 +30,13 @@ func (c *HalconController) Index(ctx fiber.Ctx) error {
 	isAdmin := role == "admin"
 
 	page := atoiDefault(ctx.Query("page"), 1)
+	if page < 1 {
+		page = 1
+	}
 	limit := atoiDefault(ctx.Query("limit"), 20)
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
 	search := strings.TrimSpace(ctx.Query("search"))
 	active := ctx.Query("active")
 
@@ -39,9 +45,9 @@ func (c *HalconController) Index(ctx fiber.Ctx) error {
 	)
 	if err != nil {
 		return ctx.Render("moderator/halcones/index", fiber.Map{
-			"title":         "Mis halcones",
-			"flash_error":   "Error al cargar los halcones",
-			"csrfToken":     csrf.TokenFromContext(ctx),
+			"title":       "Mis halcones",
+			"flash_error": "Error al cargar los halcones",
+			"csrfToken":   csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -151,6 +157,9 @@ func (c *HalconController) Destroy(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/moderator/halcones?error=datos_invalidos")
 	}
 
+	if !c.halconService.CanManage(id, ctx.Locals("user_id").(uint)) {
+		return fiber.ErrForbidden
+	}
 	if err := c.halconService.Delete(id); err != nil {
 		return ctx.Redirect().To("/moderator/halcones?error=no_se_pudo_eliminar")
 	}
@@ -160,6 +169,7 @@ func (c *HalconController) Destroy(ctx fiber.Ctx) error {
 
 // Evita el import no usado cuando Go no detecta el uso
 var _ = strconv.Itoa
+
 // Editor - GET /moderator/halcones/:id/editor
 // Muestra la vista de edición/simulación de un halcón propio del moderador.
 func (c *HalconController) Editor(ctx fiber.Ctx) error {

@@ -4,12 +4,12 @@ import (
 	"log"
 	"strings"
 
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/csrf"
 	"goravel/app/facades"
-	"strconv"
 	"goravel/app/requests"
 	"goravel/app/services"
-"github.com/gofiber/fiber/v3/middleware/csrf"
-	"github.com/gofiber/fiber/v3"
+	"strconv"
 )
 
 type AdminHalconController struct {
@@ -36,14 +36,16 @@ func (c *AdminHalconController) Index(ctx fiber.Ctx) error {
 		log.Printf("AdminHalcones Index: %v", err)
 		return ctx.Render("admin/halcones/index", fiber.Map{
 			"title": "Halcones",
-			"error": "Error al cargar halcones","csrfToken":    csrf.TokenFromContext(ctx),
+			"error": "Error al cargar halcones", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
 	stats, _ := c.halconService.AdminCountStats()
 
 	totalPages := int((total + int64(limit) - 1) / int64(limit))
-	if totalPages < 1 { totalPages = 1 }
+	if totalPages < 1 {
+		totalPages = 1
+	}
 
 	return ctx.Render("admin/halcones/index", fiber.Map{
 		"title":      "Halcones",
@@ -55,7 +57,7 @@ func (c *AdminHalconController) Index(ctx fiber.Ctx) error {
 		"search":     search,
 		"active":     active,
 		"stats":      stats,
-		"csrfToken":    csrf.TokenFromContext(ctx),
+		"csrfToken":  csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -63,7 +65,7 @@ func (c *AdminHalconController) Index(ctx fiber.Ctx) error {
 func (c *AdminHalconController) Create(ctx fiber.Ctx) error {
 	return ctx.Render("admin/halcones/form", fiber.Map{
 		"title": "Crear halcón",
-		"mode":  "create","csrfToken":    csrf.TokenFromContext(ctx),
+		"mode":  "create", "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -74,18 +76,18 @@ func (c *AdminHalconController) Store(ctx fiber.Ctx) error {
 		return ctx.Render("admin/halcones/form", fiber.Map{
 			"title":       "Crear halcón",
 			"mode":        "create",
-			"flash_error": "El nombre es obligatorio","csrfToken":    csrf.TokenFromContext(ctx),
+			"flash_error": "El nombre es obligatorio", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
-	req := requests.CreateHalconRequest{Name: name}
+	req := requests.CreateHalconRequest{Name: name, ModeratorID: ctx.Locals("user_id").(uint)}
 	halcon, err := c.halconService.Create(&req)
 	if err != nil {
 		return ctx.Render("admin/halcones/form", fiber.Map{
 			"title":       "Crear halcón",
 			"mode":        "create",
 			"flash_error": err.Error(),
-			"old":         req,"csrfToken":    csrf.TokenFromContext(ctx),
+			"old":         req, "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -115,10 +117,10 @@ func (c *AdminHalconController) Show(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("admin/halcones/show", fiber.Map{
-		"title":       "Detalle del halcón",
-		"halcon":      halcon,
-		"assignments": assignments,
-		"createdToken": createdToken,"csrfToken":    csrf.TokenFromContext(ctx),
+		"title":        "Detalle del halcón",
+		"halcon":       halcon,
+		"assignments":  assignments,
+		"createdToken": createdToken, "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -137,7 +139,7 @@ func (c *AdminHalconController) Edit(ctx fiber.Ctx) error {
 	return ctx.Render("admin/halcones/form", fiber.Map{
 		"title":  "Editar halcón",
 		"mode":   "edit",
-		"halcon": halcon,"csrfToken":    csrf.TokenFromContext(ctx),
+		"halcon": halcon, "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -158,7 +160,7 @@ func (c *AdminHalconController) Update(ctx fiber.Ctx) error {
 			"title":       "Editar halcón",
 			"mode":        "edit",
 			"halcon":      halcon,
-			"flash_error": "Error al actualizar","csrfToken":    csrf.TokenFromContext(ctx),
+			"flash_error": "Error al actualizar", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -197,7 +199,7 @@ func (c *AdminHalconController) AssignForm(ctx fiber.Ctx) error {
 	return ctx.Render("admin/halcones/assign", fiber.Map{
 		"title":  "Asignar halcón",
 		"halcon": halcon,
-		"users":  users,"csrfToken":    csrf.TokenFromContext(ctx),
+		"users":  users, "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -218,7 +220,7 @@ func (c *AdminHalconController) AssignStore(ctx fiber.Ctx) error {
 			"title":       "Asignar halcón",
 			"halcon":      halcon,
 			"users":       users,
-			"flash_error": "Selecciona un usuario válido","csrfToken":    csrf.TokenFromContext(ctx),
+			"flash_error": "Selecciona un usuario válido", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -232,4 +234,3 @@ func (c *AdminHalconController) AssignStore(ctx fiber.Ctx) error {
 
 	return ctx.Redirect().To("/admin/halcones/" + ctx.Params("id"))
 }
-	

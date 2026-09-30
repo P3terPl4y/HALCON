@@ -14,8 +14,8 @@ type User struct {
 	Name     string `gorm:"not null"`
 	Email    string `gorm:"uniqueIndex;not null"`
 	Phone    string `gorm:"uniqueIndex"`
-	Password string `gorm:"not null"`
-	Status   bool `gorm:"default:true"`
+	Password string `gorm:"not null" json:"-"`
+	Status   bool   `gorm:"default:true"`
 	Role     string `gorm:"default:'user'"` // user, moderator, admin
 }
 
@@ -26,13 +26,15 @@ func (User) TableName() string { return "users" }
 // ============================================================
 type Halcon struct {
 	orm.Model
-	Name     string     `gorm:"not null"`
-	ModeratorID uint `gorm:"not null;index"`
-	Token    string     `gorm:"uniqueIndex;not null"`
-	IsActive bool       `gorm:"default:false"`
-	LastLat  float64    `gorm:"type:decimal(10,7)"`
-	LastLng  float64    `gorm:"type:decimal(10,7)"`
-	LastSeen *time.Time `gorm:"nullable"`
+	OwnerID     *uint      `gorm:"uniqueIndex" json:"-"`
+	RecipientID *uint      `json:"-"`
+	Name        string     `gorm:"not null"`
+	ModeratorID uint       `gorm:"not null;index"`
+	Token       string     `gorm:"uniqueIndex;not null" json:"-"`
+	IsActive    bool       `gorm:"default:false"`
+	LastLat     float64    `gorm:"type:decimal(10,7)"`
+	LastLng     float64    `gorm:"type:decimal(10,7)"`
+	LastSeen    *time.Time `gorm:"nullable"`
 }
 
 func (Halcon) TableName() string { return "halcones" }

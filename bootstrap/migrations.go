@@ -12,5 +12,6 @@ func Migrations() []schema.Migration {
 		&migrations.M20260928184743CreateHalconTable{},
 		&migrations.M20260928185003CreateHalconAssignmentTable{},
 		&migrations.M20260928185035CreateHalconTable{},
+		&migrations.M20261001000000PersonalHalcones{},
 	}
 }

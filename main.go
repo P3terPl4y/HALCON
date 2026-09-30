@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 	"strconv"
 	"time"
 
@@ -28,17 +27,17 @@ import (
 // Helpers de entorno
 // ─────────────────────────────────────────────────────────────
 
-var isProd = os.Getenv("APP_ENV") == "production"
+var isProd bool
 
 func env(key, def string) string {
-	if v := os.Getenv(key); v != "" {
+	if v := facades.Config().EnvString(key); v != "" {
 		return v
 	}
 	return def
 }
 
 func envInt(key string, def int) int {
-	if v := os.Getenv(key); v != "" {
+	if v := env(key, ""); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			return n
 		}
@@ -48,9 +47,16 @@ func envInt(key string, def int) int {
 
 // ensureAdminUser crea un usuario administrador si no existe.
 func ensureAdminUser() {
-	adminEmail := "admin@example.com"
-	adminPassword := "Admin123!"
-	adminName := "Administrador"
+	adminEmail := facades.Config().EnvString("BOOTSTRAP_ADMIN_EMAIL")
+	adminPassword := facades.Config().EnvString("BOOTSTRAP_ADMIN_PASSWORD")
+	adminName := facades.Config().EnvString("BOOTSTRAP_ADMIN_NAME", "Administrador")
+	if adminEmail == "" || adminPassword == "" {
+		return
+	}
+	if len(adminPassword) < 12 {
+		log.Println("No se creará administrador: BOOTSTRAP_ADMIN_PASSWORD debe tener al menos 12 caracteres")
+		return
+	}
 	adminRole := "admin"
 
 	log.Println("🔍 Verificando existencia de usuario administrador...")
@@ -94,6 +100,7 @@ func ensureAdminUser() {
 func main() {
 	// ── 1. Bootstrap de Goravel ──
 	_ = bootstrap.Boot()
+	isProd = facades.Config().GetString("app.env") == "production"
 	ensureAdminUser()
 
 	// ── 2. Store de Redis para sesiones ──
@@ -189,45 +196,45 @@ func main() {
 	}
 
 	app.Use(csrf.New(csrf.Config{
-    CookieName:     csrfCookieName,
-    CookieSecure:   isProd,
-    CookieHTTPOnly: true,
-    CookieSameSite: "Lax",
-    Extractor:      extractors.FromForm("_csrf"),
-    IdleTimeout:    30 * time.Minute,
-    Session:        sessionStore,
-    TrustedOrigins: []string{
-        "https://halcon.duohnson.com",                              // ← TU DOMINIO
-        "https://*.duohnson.com",                                    // ← wildcard para subdominios
-        "https://mariana-flagless-inaudibly.ngrok-free.dev",
-        "http://localhost:3300",
-    },
-    // Añade esto para diagnosticar si vuelve a fallar:
-    ErrorHandler: func(c fiber.Ctx, err error) error {
-        log.Printf("❌ CSRF 403: path=%s origin=%s referer=%s scheme=%s host=%s err=%v",
-            c.Path(), c.Get("Origin"), c.Get("Referer"),
-            c.Scheme(), c.Hostname(), err)
-        return fiber.ErrForbidden
-    },
-}))
+		CookieName:     csrfCookieName,
+		CookieSecure:   isProd,
+		CookieHTTPOnly: true,
+		CookieSameSite: "Lax",
+		Extractor:      extractors.FromForm("_csrf"),
+		IdleTimeout:    30 * time.Minute,
+		Session:        sessionStore,
+		TrustedOrigins: []string{
+			"https://halcon.duohnson.com", // ← TU DOMINIO
+			"https://*.duohnson.com",      // ← wildcard para subdominios
+			"https://mariana-flagless-inaudibly.ngrok-free.dev",
+			"http://localhost:3300",
+		},
+		// Añade esto para diagnosticar si vuelve a fallar:
+		ErrorHandler: func(c fiber.Ctx, err error) error {
+			log.Printf("❌ CSRF 403: path=%s origin=%s referer=%s scheme=%s host=%s err=%v",
+				c.Path(), c.Get("Origin"), c.Get("Referer"),
+				c.Scheme(), c.Hostname(), err)
+			return fiber.ErrForbidden
+		},
+	}))
 
 	// ── 10. Archivos estáticos (por prefijo, no catch-all) ──
 	// Nota: app.Static() fue eliminado en Fiber v3. Ahora es middleware.
-	app.Use("/css",     static.New("./public/css"))
-	app.Use("/js",      static.New("./public/js"))
-	app.Use("/img",     static.New("./public/img"))
-	app.Use("/fonts",   static.New("./public/fonts"))
+	app.Use("/css", static.New("./public/css"))
+	app.Use("/js", static.New("./public/js"))
+	app.Use("/img", static.New("./public/img"))
+	app.Use("/fonts", static.New("./public/fonts"))
 	app.Use("/leaflet", static.New("./public/leaflet"))
 
 	// ── 11. WebSockets ──
 	hub := ws.NewHub()
-	go hub.Run()
-	ws.RegisterRoutes(app, hub)
+	ws.RegisterRoutes(app, hub, sessionStore)
 
 	// ── 12. Rutas HTTP ──
 	routes.Web(app)
 
 	// ── 13. Arranque ──
-	log.Println("🚀 ALCON escuchando en :3300")
-	log.Fatal(app.Listen(":3300"))
+	port := env("APP_PORT", "3300")
+	log.Printf("HALCON escuchando en :%s", port)
+	log.Fatal(app.Listen(":" + port))
 }
