@@ -29,13 +29,24 @@ func generateToken() (string, error) {
 
 // Create crea un halcón SIN asignar. La asignación es un paso separado.
 func (s *HalconService) Create(req *requests.CreateHalconRequest) (*models.Halcon, error) {
+	if req == nil {
+		return nil, errors.New("datos de halcón obligatorios")
+	}
+	name, err := ValidateName(req.Name)
+	if err != nil {
+		return nil, err
+	}
+	actor, err := NewUserService().GetByID(req.ModeratorID)
+	if err != nil || !actor.Status || (actor.Role != "admin" && actor.Role != "moderator") {
+		return nil, errors.New("sin permiso para crear dispositivos")
+	}
 	token, err := generateToken()
 	if err != nil {
 		return nil, fmt.Errorf("generar token: %w", err)
 	}
 
 	halcon := models.Halcon{
-		Name:        req.Name,
+		Name:        name,
 		ModeratorID: req.ModeratorID,
 		Token:       token,
 		IsActive:    false,
@@ -154,12 +165,10 @@ func (s *HalconService) Assign(halconID, userID, moderatorID uint, packageID str
 
 // Activate marca el halcón como activo.
 func (s *HalconService) Activate(id uint) error {
-	now := time.Now()
 	_, err := facades.Orm().Query().Model(&models.Halcon{}).
 		Where("id = ?", id).
 		Update(map[string]any{
 			"is_active": true,
-			"last_seen": now,
 		})
 	return err
 }
@@ -174,6 +183,9 @@ func (s *HalconService) Deactivate(id uint) error {
 
 // UpdateLastLocation actualiza la última posición conocida.
 func (s *HalconService) UpdateLastLocation(id uint, lat, lng float64) error {
+	if !ValidCoordinates(lat, lng) {
+		return errors.New("coordenadas inválidas")
+	}
 	now := time.Now()
 	result, err := facades.Orm().Query().Model(&models.Halcon{}).
 		Where("id = ?", id).
@@ -191,8 +203,15 @@ func (s *HalconService) UpdateLastLocation(id uint, lat, lng float64) error {
 
 // Update actualiza los campos editables del halcón.
 func (s *HalconService) Update(id uint, req *requests.UpdateHalconRequest) (*models.Halcon, error) {
+	if req == nil {
+		return nil, errors.New("datos de halcón obligatorios")
+	}
+	name, err := ValidateName(req.Name)
+	if err != nil {
+		return nil, err
+	}
 	if _, err := facades.Orm().Query().Model(&models.Halcon{}).
-		Where("id = ?", id).Update("name", req.Name); err != nil {
+		Where("id = ?", id).Update("name", name); err != nil {
 		return nil, err
 	}
 	return s.GetByID(id)
@@ -251,19 +270,16 @@ func (s *HalconService) AdminListHalcones(page, limit int, search, active string
 
 // AdminGetHalcon obtiene un halcón por ID con sus asignaciones.
 func (s *HalconService) AdminGetHalcon(id uint) (*models.Halcon, error) {
-	var h models.Halcon
-	if err := facades.Orm().Query().With("Halcon").Where("id = ?", id).FirstOrFail(&h); err != nil {
-		// Nota: el With no aplica porque no hay relación directa; se mantiene por consistencia
-		if err := facades.Orm().Query().Where("id = ?", id).FirstOrFail(&h); err != nil {
-			return nil, errors.New("halcón no encontrado")
-		}
-	}
-	return &h, nil
+	return s.GetByID(id)
 }
 
 // AdminUpdateHalcon actualiza nombre y estado activo.
 func (s *HalconService) AdminUpdateHalcon(id uint, name string, isActive bool) (*models.Halcon, error) {
-	_, err := facades.Orm().Query().Model(&models.Halcon{}).
+	name, err := ValidateName(name)
+	if err != nil {
+		return nil, err
+	}
+	_, err = facades.Orm().Query().Model(&models.Halcon{}).
 		Where("id = ?", id).
 		Update(map[string]any{
 			"name":      name,
@@ -366,24 +382,27 @@ func (s *HalconService) ListByModerator(
 	}
 
 	result := make([]HalconWithAssignment, 0, len(halcones))
+	if len(halcones) == 0 {
+		return result, total, nil
+	}
+	ids := make([]any, 0, len(halcones))
+	for _, h := range halcones {
+		ids = append(ids, h.ID)
+	}
+	var assignments []models.HalconAssignment
+	if err := facades.Orm().Query().WhereIn("halcon_id", ids).Where("ended_at IS NULL").With("User").Order("assigned_at DESC").Find(&assignments); err != nil {
+		return nil, 0, err
+	}
+	byHalcon := make(map[uint]models.HalconAssignment, len(assignments))
+	for _, a := range assignments {
+		if _, exists := byHalcon[a.HalconID]; !exists {
+			byHalcon[a.HalconID] = a
+		}
+	}
 	for _, h := range halcones {
 		item := HalconWithAssignment{Halcon: h}
-
-		var a models.HalconAssignment
-		if err := facades.Orm().Query().
-			Where("halcon_id = ?", h.ID).
-			Where("ended_at IS NULL").
-			Order("assigned_at DESC").
-			FirstOrFail(&a); err != nil {
-			result = append(result, item)
-			continue
-		}
-
-		var u models.User
-		if err := facades.Orm().Query().
-			Where("id = ?", a.UserID).
-			FirstOrFail(&u); err == nil {
-			item.AssignedUser = &u
+		if a, ok := byHalcon[h.ID]; ok && a.User != nil {
+			item.AssignedUser = a.User
 			assignedAt := a.AssignedAt
 			item.AssignedAt = &assignedAt
 		}

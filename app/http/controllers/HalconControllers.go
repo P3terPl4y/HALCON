@@ -51,7 +51,7 @@ func (c *HalconController) Index(ctx fiber.Ctx) error {
 		}, "layouts/base")
 	}
 
-	users, _, _ := c.userService.AdminListUsers(1, 200, "", "user")
+	users, _, _ := c.userService.SearchAssignable(1, 100, "")
 	stats, _ := c.halconService.StatsByModerator(moderatorID, isAdmin)
 
 	totalPages := int((total + int64(limit) - 1) / int64(limit))

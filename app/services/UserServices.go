@@ -7,7 +7,6 @@ import (
 	"goravel/app/models"
 	"goravel/app/requests"
 	"log"
-	"net/mail"
 	"strings"
 
 	"github.com/goravel/framework/contracts/database/orm"
@@ -53,15 +52,8 @@ func (s *UserService) GetByID(id uint) (*models.User, error) {
 // CreateUserWithRole crea un usuario con el rol indicado.
 // Ya no crea perfiles de Driver/Client: el rol vive directamente en User.
 func (s *UserService) CreateUserWithRole(req *requests.CreateUserRequest) (*models.User, error) {
-	req.Name = strings.TrimSpace(req.Name)
-	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
-	req.Phone = strings.TrimSpace(req.Phone)
-	address, err := mail.ParseAddress(req.Email)
-	if len([]rune(req.Name)) < 2 || len(req.Name) > 100 || err != nil || address.Address != req.Email || len(req.Email) > 254 || req.Phone == "" || len(req.Phone) > 40 || len(req.Password) < 8 || len(req.Password) > 72 {
-		return nil, errors.New("nombre, correo y teléfono válidos y contraseña de 8 a 72 caracteres son obligatorios")
-	}
-	if req.Role != "user" && req.Role != "moderator" && req.Role != "admin" {
-		return nil, errors.New("rol inválido")
+	if err := NormalizeCreateUser(req); err != nil {
+		return nil, err
 	}
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -96,8 +88,29 @@ func (s *UserService) Update(id uint, updates map[string]any) error {
 
 // Delete elimina un usuario por ID.
 func (s *UserService) Delete(id uint) error {
-	_, err := facades.Orm().Query().Where("id = ?", id).Delete(&models.User{})
-	return err
+	return s.AdminDeleteUser(id)
+}
+
+// Paginated search keeps users beyond the first dropdown page assignable.
+func (s *UserService) SearchAssignable(page, limit int, search string) ([]models.User, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	search = strings.TrimSpace(search)
+	if len(search) > 254 {
+		return nil, 0, errors.New("búsqueda demasiado larga")
+	}
+	q := facades.Orm().Query().Model(&models.User{}).Where("status = ?", true).Where("role = ?", "user")
+	if search != "" {
+		q = q.Where("name ILIKE ? OR email ILIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	var users []models.User
+	var total int64
+	err := q.Order("id").Paginate(page, limit, &users, &total)
+	return users, total, err
 }
 
 // HasRole verifica si un usuario tiene alguno de los roles dados.
@@ -170,9 +183,11 @@ func (s *UserService) AdminDeleteUser(id uint) error {
 		if _, err := tx.Where("user_id = ?", id).Delete(&models.HalconAssignment{}); err != nil {
 			return err
 		}
-		if _, err := tx.Where("moderator_id = ?", id).Update(map[string]any{"moderator_id": 0}); err != nil {
-			// Si la FK lo permite, o ignorar
-			_ = err
+		if _, err := tx.Model(&models.Halcon{}).Where("moderator_id = ?", id).Update("moderator_id", 0); err != nil {
+			return err
+		}
+		if _, err := tx.Model(&models.HalconAssignment{}).Where("moderator_id = ?", id).Update("moderator_id", 0); err != nil {
+			return err
 		}
 		if _, err := tx.Where("id = ?", id).Delete(&models.User{}); err != nil {
 			return err

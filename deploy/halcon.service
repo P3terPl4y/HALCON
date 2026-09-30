@@ -1,0 +1,18 @@
+[Unit]
+Description=HALCON Go backend and React client
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/HALCON
+ExecStart=%h/HALCON/storage/bin/halcon
+Environment=APP_ENV=production
+Environment=APP_PORT=3300
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+TimeoutStopSec=15
+
+[Install]
+WantedBy=default.target

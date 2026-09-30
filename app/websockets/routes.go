@@ -18,8 +18,7 @@ func RegisterRoutes(app *fiber.App, hub *Hub, store *session.Store) {
 		if !websocket.IsWebSocketUpgrade(c) {
 			return fiber.ErrUpgradeRequired
 		}
-		origin, err := url.Parse(c.Get("Origin"))
-		if err != nil || origin.Host != c.Get("Host") || origin.Scheme != c.Scheme() || origin.User != nil || origin.Path != "" || origin.RawQuery != "" || origin.Fragment != "" {
+		if !validBrowserOrigin(c.Get("Origin"), c.Get("Host"), c.Scheme()) {
 			return fiber.ErrForbidden
 		}
 		sess := session.FromContext(c)
@@ -60,4 +59,9 @@ func RegisterRoutes(app *fiber.App, hub *Hub, store *session.Store) {
 		}
 		return c.Next()
 	}, websocket.New(HandleHalcon(hub, service)))
+}
+
+func validBrowserOrigin(raw, host, scheme string) bool {
+	origin, err := url.Parse(raw)
+	return err == nil && origin.Host == host && origin.Scheme == scheme && origin.User == nil && origin.Path == "" && origin.RawQuery == "" && origin.Fragment == "" && (scheme == "http" || scheme == "https")
 }

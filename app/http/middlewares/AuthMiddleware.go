@@ -10,6 +10,7 @@ import (
 
 func AuthMiddleware() fiber.Handler {
 	return func(ctx fiber.Ctx) error {
+		ctx.Set("Cache-Control", "no-store")
 		unauthenticated := func() error {
 			if strings.HasPrefix(ctx.Path(), "/api/") {
 				return ctx.Status(401).JSON(fiber.Map{"error": "Inicia sesión para continuar."})

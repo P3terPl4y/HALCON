@@ -408,7 +408,7 @@ func TestTrackingIntegration(t *testing.T) {
 	require.True(t, limited, "credential attempts must be rate limited")
 
 	// Rollback is exercised too; the test schema is discarded afterwards.
-	require.NoError(t, migrator.Rollback(1, 0))
+	require.NoError(t, migrator.Rollback(2, 0))
 	// Recover the exact case where DDL committed but migration logging failed.
 	require.NoError(t, bootstrap.Migrations()[4].Up())
 	require.NoError(t, migrator.Run())

@@ -26,7 +26,7 @@ HALCON_BACKEND_URL=http://127.0.0.1:3300 VITE_BACKEND_PUBLIC_URL=http://127.0.0.
 npm run build
 ```
 
-El resultado queda en `dist/`. En producción, sirve estos archivos bajo HTTPS y el mismo origen público que `/api`, `/location` y `/dashboard`; configura el proxy para WebSocket. Mantén las vistas administrativas del backend accesibles mediante un host HTTPS propio si usas `VITE_BACKEND_PUBLIC_URL`. Esa variable se fija al compilar. `npm run preview` sólo sirve para revisar los archivos estáticos: no configura el proxy al backend.
+El resultado queda en `dist/`, con prefijo de recursos `/app/`. El backend actualizado sirve automáticamente ese directorio en `/app/` cuando existe `dist/index.html`. Publica el backend bajo HTTPS; React, la API y WebSocket comparten origen y sesión. Compila antes de arrancar el backend. Los enlaces de administración y registro usan el mismo origen en producción; `VITE_BACKEND_PUBLIC_URL` permite configurar otro y se fija al compilar. `npm run preview` sólo sirve para revisar los archivos estáticos: no configura el proxy al backend.
 
 Este proyecto es una aplicación web adaptable. La página debe permanecer abierta para transmitir GPS; no ofrece ubicación garantizada con el teléfono bloqueado.
 

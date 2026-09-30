@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/gofiber/contrib/v3/websocket"
 	"goravel/app/services"
-	"math"
 	"strconv"
 	"time"
 )
@@ -20,7 +19,7 @@ func decodeLocation(data []byte) (Coordinate, bool) {
 		return Coordinate{}, false
 	}
 	lat, lng := *p.Latitude, *p.Longitude
-	if math.IsNaN(lat) || math.IsInf(lat, 0) || math.IsNaN(lng) || math.IsInf(lng, 0) || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
+	if !services.ValidCoordinates(lat, lng) {
 		return Coordinate{}, false
 	}
 	return Coordinate{Latitude: lat, Longitude: lng}, true
@@ -173,16 +172,13 @@ func HandleDashboard(hub *Hub, service *services.HalconService) func(*websocket.
 				if !sessionValid(c) {
 					return
 				}
-				hs, err := service.VisibleTo(uid)
+				allowed, err := service.CanView(coord.HalconID, uid)
 				if err != nil {
 					return
 				}
-				for _, h := range hs {
-					if h.ID == coord.HalconID {
-						if err := write(coord); err != nil {
-							return
-						}
-						break
+				if allowed {
+					if err := write(coord); err != nil {
+						return
 					}
 				}
 			}

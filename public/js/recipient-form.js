@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const response = await fetch('/api/tracking/recipient', {method: 'POST', body: payload, credentials: 'same-origin', headers: {Accept: 'application/json'}});
       if (response.status === 401) { feedback.textContent = 'Tu sesión terminó. Inicia sesión para continuar.'; return; }
       if (response.status === 403) { feedback.textContent = 'El formulario caducó. Recarga la página e inténtalo de nuevo.'; return; }
-      const data = await response.json();
+      const data = await response.json().catch(function () { return {}; });
       if (!response.ok) throw new Error(data.error || 'No se pudo guardar. Inténtalo de nuevo.');
       hasRecipient = Boolean(data.recipient);
       current.textContent = data.recipient ? 'Compartiendo con ' + data.recipient.name : 'Sin destinatario. Tu ubicación personal aún no se comparte.';

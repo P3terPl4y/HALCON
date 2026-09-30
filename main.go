@@ -225,6 +225,7 @@ func main() {
 	app.Use("/img", static.New("./public/img"))
 	app.Use("/fonts", static.New("./public/fonts"))
 	app.Use("/leaflet", static.New("./public/leaflet"))
+	routes.RegisterReact(app, "./react/dist")
 
 	// ── 11. WebSockets ──
 	hub := ws.NewHub()

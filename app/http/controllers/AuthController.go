@@ -181,7 +181,9 @@ func (c *AuthController) Logout(ctx fiber.Ctx) error {
 	if sess != nil {
 		userID := sess.Get("user_id")
 		log.Printf("Logout - User ID: %v", userID)
-		sess.Destroy()
+		if err := sess.Destroy(); err != nil {
+			return fiber.ErrInternalServerError
+		}
 	}
 	return ctx.Redirect().To("/login")
 }

@@ -46,7 +46,7 @@ func Web(app *fiber.App) {
 		middlewares.AuthMiddleware(),
 		middlewares.ModeratorMiddleware(),
 	)
-	moderator.Get("/halcon", func(c fiber.Ctx) error { return c.Render("halcon", fiber.Map{}, "layouts/base") })
+	moderator.Get("/halcon", func(c fiber.Ctx) error { return c.Redirect().To("/moderator/halcones") })
 	moderator.Get("/halcones/:id/editor", halconCtrl.Editor)
 	moderator.Get("/halcones", halconCtrl.Index)
 	moderator.Post("/halcones", halconCtrl.Store)

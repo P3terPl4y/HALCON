@@ -79,3 +79,16 @@ func (s *HalconService) CanManage(id, actorID uint) bool {
 	u, err := NewUserService().GetByID(actorID)
 	return err == nil && u.Status && (u.Role == "admin" || (u.Role == "moderator" && h.ModeratorID == actorID))
 }
+
+// Check one coordinate's permission without loading every visible halcon.
+// Status and role are read from the database for each event, including admins.
+func (s *HalconService) CanView(id, userID uint) (bool, error) {
+	count, err := facades.Orm().Query().Model(&models.Halcon{}).Where("id = ?", id).Where(`EXISTS (
+		SELECT 1 FROM users u WHERE u.id = ? AND u.status = true AND (
+			u.role = 'admin' OR halcones.owner_id = u.id OR halcones.recipient_id = u.id
+			OR (u.role = 'moderator' AND halcones.moderator_id = u.id)
+			OR EXISTS (SELECT 1 FROM halcon_assignments a WHERE a.halcon_id = halcones.id AND a.user_id = u.id AND a.ended_at IS NULL)
+		)
+	)`, userID).Count()
+	return count > 0, err
+}

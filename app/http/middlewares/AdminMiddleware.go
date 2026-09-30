@@ -19,7 +19,7 @@ func AdminMiddleware() fiber.Handler {
 		}
 
 		var user models.User
-		if err := facades.Orm().Query().Where("id = ?", userID).First(&user); err != nil {
+		if err := facades.Orm().Query().Where("id = ?", userID).FirstOrFail(&user); err != nil || !user.Status {
 			facades.Log().Errorf("AdminMiddleware: usuario %d no encontrado", userID)
 			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Usuario no encontrado",

@@ -194,7 +194,7 @@ func (c *AdminHalconController) AssignForm(ctx fiber.Ctx) error {
 	}
 
 	// Cargar usuarios (solo rol user) para el selector
-	users, _, _ := c.userService.AdminListUsers(1, 100, "", "user")
+	users, _, _ := c.userService.SearchAssignable(1, 100, "")
 
 	return ctx.Render("admin/halcones/assign", fiber.Map{
 		"title":  "Asignar halcón",
@@ -215,7 +215,7 @@ func (c *AdminHalconController) AssignStore(ctx fiber.Ctx) error {
 
 	if userID == 0 {
 		halcon, _ := c.halconService.GetByID(id)
-		users, _, _ := c.userService.AdminListUsers(1, 100, "", "user")
+		users, _, _ := c.userService.SearchAssignable(1, 100, "")
 		return ctx.Render("admin/halcones/assign", fiber.Map{
 			"title":       "Asignar halcón",
 			"halcon":      halcon,

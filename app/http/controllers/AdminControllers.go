@@ -4,13 +4,12 @@ import (
 	"log"
 	"strings"
 
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/csrf"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/requests"
 	"goravel/app/services"
-"github.com/gofiber/fiber/v3/middleware/csrf"
-	"github.com/gofiber/fiber/v3"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AdminUserController struct {
@@ -35,7 +34,7 @@ func (c *AdminUserController) Index(ctx fiber.Ctx) error {
 		log.Printf("AdminUsers Index: %v", err)
 		return ctx.Render("admin/users/index", fiber.Map{
 			"title": "Usuarios",
-			"error": "Error al cargar usuarios","csrfToken":    csrf.TokenFromContext(ctx),
+			"error": "Error al cargar usuarios", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -66,7 +65,7 @@ func (c *AdminUserController) Index(ctx fiber.Ctx) error {
 		"nextPage":   nextPage,
 		"search":     search,
 		"roleFilter": role,
-		"stats":      stats,"csrfToken":    csrf.TokenFromContext(ctx),
+		"stats":      stats, "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -74,7 +73,7 @@ func (c *AdminUserController) Index(ctx fiber.Ctx) error {
 func (c *AdminUserController) Create(ctx fiber.Ctx) error {
 	return ctx.Render("admin/users/form", fiber.Map{
 		"title": "Crear usuario",
-		"mode":  "create","csrfToken":    csrf.TokenFromContext(ctx),
+		"mode":  "create", "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -85,7 +84,7 @@ func (c *AdminUserController) Store(ctx fiber.Ctx) error {
 		return ctx.Render("admin/users/form", fiber.Map{
 			"title":       "Crear usuario",
 			"mode":        "create",
-			"flash_error": "Datos inválidos","csrfToken":    csrf.TokenFromContext(ctx),
+			"flash_error": "Datos inválidos", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -98,7 +97,7 @@ func (c *AdminUserController) Store(ctx fiber.Ctx) error {
 			"title":       "Crear usuario",
 			"mode":        "create",
 			"flash_error": "Error al verificar el email",
-			"old":         req,"csrfToken":    csrf.TokenFromContext(ctx),
+			"old":         req, "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 	if count > 0 {
@@ -106,7 +105,7 @@ func (c *AdminUserController) Store(ctx fiber.Ctx) error {
 			"title":       "Crear usuario",
 			"mode":        "create",
 			"flash_error": "El email ya está registrado",
-			"old":         req,"csrfToken":    csrf.TokenFromContext(ctx),
+			"old":         req, "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -116,7 +115,7 @@ func (c *AdminUserController) Store(ctx fiber.Ctx) error {
 			"title":       "Crear usuario",
 			"mode":        "create",
 			"flash_error": err.Error(),
-			"old":         req,"csrfToken":    csrf.TokenFromContext(ctx),
+			"old":         req, "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -139,7 +138,7 @@ func (c *AdminUserController) Edit(ctx fiber.Ctx) error {
 	return ctx.Render("admin/users/form", fiber.Map{
 		"title": "Editar usuario",
 		"mode":  "edit",
-		"user":  user,"csrfToken":    csrf.TokenFromContext(ctx),
+		"user":  user, "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -160,39 +159,25 @@ func (c *AdminUserController) Update(ctx fiber.Ctx) error {
 	password := ctx.FormValue("password")
 	role := strings.ToLower(strings.TrimSpace(ctx.FormValue("role")))
 
-	updates := map[string]any{}
-
-	if name != "" {
-		updates["name"] = name
+	updates, err := services.PrepareUserUpdates(requests.UserUpdateRequest{Name: name, Email: email, Password: password}, role)
+	if err != nil {
+		return ctx.Status(422).Render("admin/users/form", fiber.Map{"title": "Editar usuario", "mode": "edit", "user": user, "flash_error": err.Error(), "csrfToken": csrf.TokenFromContext(ctx)}, "layouts/base")
 	}
-	if email != "" && email != user.Email {
-		count, _ := facades.Orm().Query().Model(&models.User{}).
-			Where("email = ?", email).
+	if normalized, ok := updates["email"].(string); ok && normalized != user.Email {
+		count, err := facades.Orm().Query().Model(&models.User{}).
+			Where("email = ?", normalized).
 			Where("id <> ?", id).Count()
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
 		if count > 0 {
 			return ctx.Render("admin/users/form", fiber.Map{
 				"title":       "Editar usuario",
 				"mode":        "edit",
 				"user":        user,
-				"flash_error": "El email ya está registrado","csrfToken":    csrf.TokenFromContext(ctx),
+				"flash_error": "El email ya está registrado", "csrfToken": csrf.TokenFromContext(ctx),
 			}, "layouts/base")
 		}
-		updates["email"] = email
-	}
-	if password != "" {
-		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			return ctx.Render("admin/users/form", fiber.Map{
-				"title":       "Editar usuario",
-				"mode":        "edit",
-				"user":        user,
-				"flash_error": "Error al procesar la contraseña","csrfToken":    csrf.TokenFromContext(ctx),
-			}, "layouts/base")
-		}
-		updates["password"] = string(hashed)
-	}
-	if role != "" && role != user.Role {
-		updates["role"] = role
 	}
 
 	if err := c.userService.AdminUpdateUser(id, updates); err != nil {
@@ -201,7 +186,7 @@ func (c *AdminUserController) Update(ctx fiber.Ctx) error {
 			"title":       "Editar usuario",
 			"mode":        "edit",
 			"user":        user,
-			"flash_error": "Error al actualizar el usuario","csrfToken":    csrf.TokenFromContext(ctx),
+			"flash_error": "Error al actualizar el usuario", "csrfToken": csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
 
@@ -222,6 +207,7 @@ func (c *AdminUserController) Destroy(ctx fiber.Ctx) error {
 
 	if err := c.userService.AdminDeleteUser(id); err != nil {
 		log.Printf("AdminUsers Destroy: %v", err)
+		return fiber.ErrInternalServerError
 	}
 
 	return ctx.Redirect().To("/admin/users")

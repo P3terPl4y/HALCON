@@ -61,6 +61,14 @@ func TestBrowserFixture(t *testing.T) {
 			require.NoError(t, err)
 		}
 	}
+	for i := 4; i <= 120; i++ {
+		email := fmt.Sprintf("browser-extra-%d@example.test", i)
+		if i == 120 {
+			email = "browser-last@example.test"
+		}
+		u := models.User{Name: "Usuario adicional de prueba", Email: email, Phone: fmt.Sprintf("browser-extra-%d", i), Password: string(password), Status: true, Role: "user"}
+		require.NoError(t, facades.Orm().Query().Create(&u))
+	}
 	binary := os.Getenv("HALCON_BROWSER_BINARY")
 	require.NotEmpty(t, binary)
 	cmd := exec.Command(binary)

@@ -1,0 +1,21 @@
+{
+  "elapsed_seconds": 225.562760008,
+  "failures": [],
+  "http_latency_ms": {"p50": 43.796282, "p95": 922.314206, "p99": 1416.22814},
+  "http_requests": 30254,
+  "http_statuses": {"200": 17176, "204": 500, "303": 2606, "401": 1000, "403": 5972, "422": 3000},
+  "phases_seconds": {
+    "1000_simultaneous_viewers_seconds": 10.048277606,
+    "gps_delivery_forgery_and_revocation": 80.831323047,
+    "logout_and_session_revocation": 1.03251536,
+    "moderator_and_administrator_workflows": 1.600274258,
+    "open_1000_simultaneous_viewers": 3.9463554480000003,
+    "profile_sharing_and_access_attacks": 34.917627843,
+    "registration_and_login": 92.417451587
+  },
+  "rejected_access_assertions": 14968,
+  "roles": {"admin": 2, "moderator": 18, "user": 980},
+  "success": true,
+  "users": 1000,
+  "workers": 32
+}

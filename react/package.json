@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build --base=/app/",
     "preview": "vite preview --host 127.0.0.1",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "leaflet": "1.9.4",
@@ -17,11 +18,15 @@
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.63.0",
+    "@testing-library/react": "16.3.3",
+    "@types/jsdom": "30.0.0",
     "@types/leaflet": "1.9.22",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.1",
+    "jsdom": "27.4.0",
     "typescript": "7.0.2",
-    "vite": "8.3.1"
+    "vite": "8.3.1",
+    "vitest": "5.0.3"
   }
 }

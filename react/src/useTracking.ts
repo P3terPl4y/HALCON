@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react'
 import type {Halcon} from './api'
+import {validHalcon,validPosition} from './tracking-data'
 
 export function useTracking(userID: number, onExpired: () => void) {
   const [halcones, setHalcones] = useState<Halcon[]>([])
@@ -15,16 +16,18 @@ export function useTracking(userID: number, onExpired: () => void) {
       socket.onmessage = (event) => {
         let data: any
         try { data = JSON.parse(event.data) } catch { return }
-        if (data.type === 'snapshot') setHalcones(data.halcones)
-        else if (typeof data.latitude === 'number') setHalcones(items => items.map(h => h.halcon_id === data.halcon_id ? {...h,lat:data.latitude,lng:data.longitude,active:true,has_location:true} : h))
+        if (!data || typeof data!=='object') return
+        if (data.type === 'snapshot' && Array.isArray(data.halcones) && data.halcones.every(validHalcon)) setHalcones(data.halcones)
+        else if (validPosition(data.latitude,data.longitude)) setHalcones(items => items.map(h => h.halcon_id === data.halcon_id ? {...h,lat:data.latitude,lng:data.longitude,active:true,has_location:true} : h))
       }
       socket.onclose = async () => {
         if (disposed) return
         setHalcones([]); setConnection('Reconectando…')
         try {
           const response = await fetch('/api/session', {credentials:'same-origin',cache:'no-store'})
+          if (!response.ok) throw new Error('session temporarily unavailable')
           const session = await response.json()
-          if (!session.user) { expire.current(); return }
+          if (session.user===null) { expire.current(); return }
         } catch { /* Network failure: retry with bounded backoff. */ }
         if (!disposed) { retry = setTimeout(connect,delay); delay = Math.min(delay*2,15000) }
       }
