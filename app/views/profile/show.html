@@ -16,7 +16,7 @@
   <div class="tracking-card__heading"><div>
     <span class="tracking-eyebrow">TU UBICACIÓN, BAJO TU CONTROL</span>
     <h2 id="tracking-title">Comparte tu recorrido</h2>
-    <p>Elige quién puede verte y activa el GPS cuando estés listo.</p>
+    <p>Elige un destinatario y activa la ubicación cuando quieras compartir. Los administradores también pueden consultar las ubicaciones.</p>
   </div><span class="tracking-badge">Halcón #{{ .personal.ID }}</span></div>
   <div class="tracking-card__grid">
   <form id="recipient-form" action="/profile/share" method="post" class="tracking-recipient">
@@ -39,7 +39,7 @@
     <button id="share-stop" type="button" class="btn btn-outline-primary" disabled>Detener transmisión</button>
     </div>
     <p id="share-status" role="status" aria-live="polite" class="tracking-current">Transmisión detenida. El navegador te pedirá permiso para usar el GPS.</p>
-    <p class="tracking-help">Mantén esta página abierta. Detener el GPS conserva la última posición; retirar el acceso deja de mostrarla al destinatario.</p>
+    <p class="tracking-help">Necesitas conexión y mantener esta página abierta. La transmisión con la pantalla bloqueada no está garantizada. Detener el GPS conserva la última posición; retirar acceso deja de mostrarla al destinatario, pero la coordenada sigue guardada en HALCON.</p>
   </div>
   </div>
 </section>
